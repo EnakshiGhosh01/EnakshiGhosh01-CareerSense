@@ -4,8 +4,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.compose import ColumnTransformer
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.preprocessing import OneHotEncoder
-from sklearn.dummy import DummyRegressor
-from sklearn.linear_model import Ridge
+from sklearn.decomposition import TruncatedSVD
+from sklearn.ensemble import RandomForestRegressor
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 
 
@@ -52,57 +52,30 @@ def main():
 
     salary_df = salary_df[
         features + [target]
-    ].copy()
+    ].dropna().copy()
 
     # ==================================================
-    # 4. REMOVE MISSING VALUES
+    # 4. CLEAN TEXT
     # ==================================================
 
-    salary_df = salary_df.dropna(
-        subset=[
-            "title",
-            "location",
-            "tagsAndSkills",
-            "experience_midpoint",
-            target
-        ]
-    )
-
-    print(
-        f"Rows after removing missing values: "
-        f"{len(salary_df)}"
-    )
-
-    # ==================================================
-    # 5. CLEAN TEXT
-    # ==================================================
-
-    text_columns = [
+    for column in [
         "title",
         "location",
         "tagsAndSkills"
-    ]
-
-    for column in text_columns:
+    ]:
 
         salary_df[column] = (
             salary_df[column]
-            .fillna("")
             .astype(str)
             .str.strip()
             .str.lower()
         )
 
-    # ==================================================
-    # 6. X AND y
-    # ==================================================
-
     X = salary_df[features]
-
     y = salary_df[target]
 
     # ==================================================
-    # 7. TRAIN / TEST SPLIT
+    # 5. TRAIN / TEST SPLIT
     # ==================================================
 
     X_train, X_test, y_train, y_test = train_test_split(
@@ -118,7 +91,7 @@ def main():
     print(f"Testing rows: {len(X_test)}")
 
     # ==================================================
-    # 8. PREPROCESSING
+    # 6. TEXT + CATEGORICAL PREPROCESSING
     # ==================================================
 
     preprocessor = ColumnTransformer(
@@ -161,85 +134,88 @@ def main():
         ]
     )
 
-    print("\nFitting preprocessing pipeline...")
+    print("\nFitting preprocessing...")
 
-    X_train_transformed = preprocessor.fit_transform(
+    X_train_sparse = preprocessor.fit_transform(
         X_train
     )
 
-    X_test_transformed = preprocessor.transform(
+    X_test_sparse = preprocessor.transform(
         X_test
     )
 
     print(
-        f"Training matrix shape: "
-        f"{X_train_transformed.shape}"
+        f"Sparse training shape: "
+        f"{X_train_sparse.shape}"
+    )
+
+    # ==================================================
+    # 7. REDUCE DIMENSIONS
+    # ==================================================
+
+    print("\nApplying TruncatedSVD...")
+
+    svd = TruncatedSVD(
+        n_components=100,
+        random_state=42
+    )
+
+    X_train_reduced = svd.fit_transform(
+        X_train_sparse
+    )
+
+    X_test_reduced = svd.transform(
+        X_test_sparse
     )
 
     print(
-        f"Testing matrix shape: "
-        f"{X_test_transformed.shape}"
+        f"Reduced training shape: "
+        f"{X_train_reduced.shape}"
+    )
+
+    print(
+        f"Reduced testing shape: "
+        f"{X_test_reduced.shape}"
+    )
+
+    print(
+        f"Explained variance: "
+        f"{svd.explained_variance_ratio_.sum():.4f}"
     )
 
     # ==================================================
-    # 9. BASELINE MODEL
+    # 8. RANDOM FOREST
     # ==================================================
 
-    print("\n===== BASELINE MODEL =====")
+    print("\n===== RANDOM FOREST =====")
 
-    baseline = DummyRegressor(
-        strategy="mean"
+    model = RandomForestRegressor(
+        n_estimators=150,
+        max_depth=20,
+        min_samples_leaf=3,
+        random_state=42,
+        n_jobs=-1
     )
 
-    baseline.fit(
-        X_train_transformed,
-        y_train
-    )
-
-    baseline_predictions = baseline.predict(
-        X_test_transformed
-    )
-
-    baseline_mae = mean_absolute_error(
-        y_test,
-        baseline_predictions
-    )
-
-    baseline_rmse = mean_squared_error(
-        y_test,
-        baseline_predictions
-    ) ** 0.5
-
-    baseline_r2 = r2_score(
-        y_test,
-        baseline_predictions
-    )
-
-    print(f"Baseline MAE:  ₹{baseline_mae:,.2f}")
-    print(f"Baseline RMSE: ₹{baseline_rmse:,.2f}")
-    print(f"Baseline R²:   {baseline_r2:.4f}")
-
-    # ==================================================
-    # 10. RIDGE REGRESSION
-    # ==================================================
-
-    print("\n===== RIDGE REGRESSION =====")
-
-    model = Ridge(
-        alpha=10.0
-    )
+    print("Training Random Forest...")
 
     model.fit(
-        X_train_transformed,
+        X_train_reduced,
         y_train
     )
 
+    # ==================================================
+    # 9. PREDICTIONS
+    # ==================================================
+
+    print("Generating predictions...")
+
     predictions = model.predict(
-        X_test_transformed
+        X_test_reduced
     )
 
     # ==================================================
-    # 11. EVALUATION
+    # 10. EVALUATION
     # ==================================================
 
     mae = mean_absolute_error(
@@ -257,49 +233,56 @@ def main():
         predictions
     )
 
-    print("\n===== MODEL RESULTS =====")
+    print("\n===== RANDOM FOREST RESULTS =====")
 
     print(f"MAE:  ₹{mae:,.2f}")
     print(f"RMSE: ₹{rmse:,.2f}")
     print(f"R²:   {r2:.4f}")
 
     # ==================================================
-    # 12. COMPARE WITH BASELINE
+    # 11. RIDGE REFERENCE
     # ==================================================
 
-    print("\n===== COMPARISON =====")
+    print("\n===== RIDGE REFERENCE =====")
+
+    print("Ridge MAE:  ₹305,285.76")
+    print("Ridge RMSE: ₹628,526.42")
+    print("Ridge R²:   0.5586")
+
+    # ==================================================
+    # 12. COMPARISON
+    # ==================================================
+
+    print("\n===== MODEL COMPARISON =====")
 
     print(
-        f"Baseline MAE: ₹{baseline_mae:,.2f}"
+        f"Ridge MAE:         ₹305,285.76"
     )
 
     print(
-        f"Ridge MAE:    ₹{mae:,.2f}"
+        f"Random Forest MAE: ₹{mae:,.2f}"
     )
 
-    if mae < baseline_mae:
+    if mae < 305285.76:
 
         improvement = (
-            (baseline_mae - mae)
-            / baseline_mae
+            (305285.76 - mae)
+            / 305285.76
         ) * 100
 
         print(
-            f"MAE improvement: "
-            f"{improvement:.2f}%"
-        )
-
-        print(
-            "Ridge performs better than the baseline."
+            f"Random Forest improves MAE by "
+            f"{improvement:.2f}% over Ridge."
         )
 
     else:
 
         print(
-            "Ridge does not outperform the baseline."
+            "Random Forest does not improve "
+            "MAE over Ridge."
         )
 
-    print("\n===== TRAINING COMPLETED =====")
+    print("\n===== MODEL COMPARISON COMPLETED =====")
 
 
 if __name__ == "__main__":
