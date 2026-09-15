@@ -2,12 +2,16 @@ import re
 
 
 # ==========================================================
-# SKILL CATEGORIES
+# CONTROLLED SKILL VOCABULARY
 # ==========================================================
 
 SKILL_CATEGORIES = {
 
-    "programming": [
+    # ------------------------------------------------------
+    # Programming Languages
+    # ------------------------------------------------------
+
+    "programming": {
         "python",
         "java",
         "c",
@@ -15,219 +19,373 @@ SKILL_CATEGORIES = {
         "c#",
         "javascript",
         "typescript",
-        "go",
-        "ruby",
-        "php",
+        "scala",
         "kotlin",
         "swift",
-    ],
+        "go",
+        "golang",
+        "rust",
+        "php",
+        "ruby",
+        "r",
+        "matlab",
+        "perl",
+        "shell scripting",
+        "bash",
+        "powershell",
+        "sql",
+        "pl/sql",
+        "rpg",
+        "rpgle",
+        "clp",
+        "clle",
+        "cobol",
+        "fortran",
+    },
 
-    "data_science": [
+
+    # ------------------------------------------------------
+    # Data Science / Machine Learning / AI
+    # ------------------------------------------------------
+
+    "data_science": {
         "machine learning",
+        "machine learning algorithms",
         "deep learning",
         "artificial intelligence",
-        "data science",
+        "generative ai",
+        "generative artificial intelligence",
         "natural language processing",
-        "nlp",
         "computer vision",
+        "reinforcement learning",
+        "data science",
+        "statistics",
+        "statistical analysis",
+        "linear algebra",
+        "calculus",
+        "algorithms",
+        "data structures",
+        "model development",
+        "model deployment",
+        "mlops",
+        "ml ops",
+        "ml flow",
+        "ml pipelines",
+        "ai techniques",
+        "large language model",
+        "llm",
+        "open ai",
+        "openai",
+        "openai apis",
+        "cognitive services",
+        "asr",
+        "ivR",
+        "jax",
         "tensorflow",
+        "tensor flow",
         "pytorch",
-        "scikit-learn",
         "keras",
+        "scikit-learn",
         "xgboost",
-    ],
+    },
 
-    "data_analysis": [
+
+    # ------------------------------------------------------
+    # Data Analysis / BI
+    # ------------------------------------------------------
+
+    "data_analysis": {
         "data analysis",
         "data analytics",
+        "data analytics",
+        "data visualization",
+        "business intelligence",
+        "business analytics",
+        "power bi",
+        "tableau",
+        "excel",
+        "advanced excel",
         "pandas",
         "numpy",
         "matplotlib",
         "seaborn",
-        "excel",
-        "power bi",
-        "tableau",
-        "data visualization",
-    ],
+        "power query",
+        "power pivot",
+        "qlikview",
+        "qlik sense",
+        "looker",
+        "sas",
+        "spss",
+    },
 
-    "databases": [
+
+    # ------------------------------------------------------
+    # Databases
+    # ------------------------------------------------------
+
+    "databases": {
         "sql",
         "mysql",
         "postgresql",
+        "postgres",
         "oracle",
+        "oracle database",
         "mongodb",
-        "sqlite",
         "redis",
+        "sqlite",
         "database management",
-    ],
+        "dbms",
+        "db2",
+        "ibm db2",
+        "pl/sql",
+        "stored procedures",
+        "query writing",
+        "database design",
+        "database administration",
+        "hive",
+        "presto",
+        "snowflake",
+    },
 
-    "web_development": [
+
+    # ------------------------------------------------------
+    # Web Development
+    # ------------------------------------------------------
+
+    "web_development": {
         "html",
+        "html5",
         "css",
+        "css3",
+        "javascript",
+        "typescript",
         "react",
+        "react.js",
+        "reactjs",
         "angular",
         "vue",
+        "vue.js",
         "node.js",
         "nodejs",
         "express",
+        "express.js",
         "django",
         "flask",
+        "fastapi",
         "spring",
         "spring boot",
+        "rest",
         "rest api",
         "restful api",
-    ],
+        "api development",
+    },
 
-    "cloud": [
+
+    # ------------------------------------------------------
+    # Cloud
+    # ------------------------------------------------------
+
+    "cloud": {
         "aws",
         "amazon web services",
         "azure",
         "microsoft azure",
-        "google cloud",
         "gcp",
+        "google cloud",
+        "google cloud platform",
+        "azure kubernetes services",
+        "aks",
+        "cognitive services",
+        "cloud computing",
+        "cloud architecture",
+        "cloud security",
+        "cloud deployment",
+    },
+
+
+    # ------------------------------------------------------
+    # DevOps
+    # ------------------------------------------------------
+
+    "devops": {
+        "devops",
+        "devops tools",
         "docker",
         "kubernetes",
+        "jenkins",
         "terraform",
+        "ansible",
+        "ci/cd",
+        "ci cd",
+        "continuous integration",
+        "continuous delivery",
+        "continuous deployment",
         "azure devops",
-    ],
-
-    "devops": [
         "git",
         "github",
         "gitlab",
-        "jenkins",
-        "ci/cd",
+        "bitbucket",
         "linux",
-        "bash",
-        "devops",
-        "site reliability engineering",
+        "unix",
         "sre",
-        "monitoring tools",
-    ],
+        "site reliability engineering",
+        "monitoring",
+        "deployment",
+    },
 
-    "software_engineering": [
-        "data structures",
-        "algorithms",
+
+    # ------------------------------------------------------
+    # Software Engineering
+    # ------------------------------------------------------
+
+    "software_engineering": {
+        "software engineering",
+        "software development",
+        "software design",
+        "system design",
+        "technical design",
         "object oriented programming",
         "oop",
-        "software development",
-        "software engineering",
-        "debugging",
-        "unit testing",
-        "api development",
         "design patterns",
-    ],
-
-    "business": [
-        "business analysis",
-        "business intelligence",
-        "requirements gathering",
-        "project management",
+        "unit testing",
+        "tdd",
+        "debugging",
         "agile",
         "scrum",
         "jira",
+        "version control",
+        "github",
+        "git",
+        "architecture",
+        "system architecture",
+        "microservices",
+        "testing",
+        "automation",
+    },
+
+
+    # ------------------------------------------------------
+    # Signal Processing / Embedded / Electronics
+    # ------------------------------------------------------
+
+    "signal_processing": {
+        "signal processing",
+        "digital signal processing",
+        "dsp",
+        "matlab",
+        "hdl",
+        "verilog",
+        "vhdl",
+        "radar",
+        "embedded systems",
+        "embedded c",
+        "fpga",
+        "microcontrollers",
+        "electronics",
+        "image processing",
+        "audio processing",
+    },
+
+
+    # ------------------------------------------------------
+    # IBM / AS400 / Mainframe
+    # ------------------------------------------------------
+
+    "enterprise_systems": {
+        "as400",
+        "ibm as400",
+        "iseries",
+        "ibm i",
+        "rpg",
+        "rpgle",
+        "rpg iv",
+        "clp",
+        "clle",
+        "ile",
+        "ile rpg",
+        "sqlrpgle",
+        "seu",
+        "db2",
+        "ibm db2",
+        "cobol",
+        "mainframe",
+        "z/os",
+        "jcl",
+    },
+
+
+    # ------------------------------------------------------
+    # Business / Management
+    # ------------------------------------------------------
+
+    "business": {
+        "business analysis",
+        "business analyst",
+        "business analytics",
+        "requirements analysis",
+        "requirements gathering",
         "stakeholder management",
-
+        "project management",
         "product management",
-        "product marketing",
         "group product management",
-        "brand management",
-        "brand marketing",
+        "process management",
+        "operations",
+        "sales",
+        "customer service",
+        "consulting",
+        "erp",
+        "sap",
+        "supply chain",
+        "insurance",
+    },
 
-        "performance marketing",
-        "growth marketing",
+
+    # ------------------------------------------------------
+    # Marketing
+    # ------------------------------------------------------
+
+    "marketing": {
         "digital marketing",
+        "performance marketing",
         "paid marketing",
+        "growth marketing",
         "user acquisition",
         "acquisition",
+        "seo",
+        "sem",
+        "social media marketing",
+        "content marketing",
+        "marketing analytics",
+    },
 
-        "recruitment",
-        "staffing",
-        "hiring",
-        "manpower",
-        "communication",
-        "communication skills",
 
-        "medical billing",
-        "billing",
+    # ------------------------------------------------------
+    # Office / Productivity
+    # ------------------------------------------------------
 
-        "fire safety",
-        "fire protection",
-        "fire engineering",
-        "fire prevention",
-        "safety management",
-        "fire management",
-        "hazard analysis",
-        "safety officer activities",
-
-        "sap",
-
-        "tds filing",
-        "itr",
-        "gst filing",
-        "tax audit",
-        "return filing",
-        "accounts finalisation",
-        "balance sheet finalisation",
-        "e way bill",
-
-        "preventive maintenance",
-        "utility maintenance",
-        "powder coating",
-        "conveyor",
-
-        "laboratory",
-        "laboratory knowledge",
-        "lab",
-    ],
-
-    "office_tools": [
+    "office_tools": {
         "microsoft office",
         "ms office",
-        "m.s office",
-        "computer skills",
-        "computer knowledge",
-    ],
+        "microsoft excel",
+        "excel",
+        "powerpoint",
+        "word",
+        "outlook",
+        "access",
+    },
 
-    "languages": [
+
+    # ------------------------------------------------------
+    # Languages / Communication
+    # ------------------------------------------------------
+
+    "languages": {
         "english",
-        "spoken english",
-        "fluent english",
-        "good english communication",
-    ],
-}
-
-
-# ==========================================================
-# GENERIC / NOISY JOB TAGS
-# ==========================================================
-
-GENERIC_JOB_TAGS = {
-    "sr",
-    "senior",
-    "junior",
-    "site",
-    "technical",
-    "performance",
-    "usage",
-    "marketing",
-    "medical",
-    "fluent",
-    "english",
-    "computer",
-    "office",
-    "microsoft",
-    "m.s",
-    "ms",
-    "skills",
-    "knowledge",
-    "activities",
-    "special process",
-    "booth",
-    "reliability",
-    "monitoring",
-    "safety officer",
-    "safety",
+        "hindi",
+        "bengali",
+        "communication",
+        "english communication",
+    },
 }
 
 
@@ -240,81 +398,106 @@ SKILL_ALIASES = {
     "nodejs": "node.js",
     "node js": "node.js",
 
-    "nlp": "natural language processing",
+    "reactjs": "react",
+    "react.js": "react",
 
-    "oop": "object oriented programming",
+    "vuejs": "vue",
+    "vue.js": "vue",
 
-    "sre": "site reliability engineering",
+    "angularjs": "angular",
+    "angular.js": "angular",
+
+    "golang": "go",
+
+    "scikit learn": "scikit-learn",
+    "scikit_learn": "scikit-learn",
+
+    "tensor flow": "tensorflow",
+
+    "mlops": "mlops",
+    "ml ops": "mlops",
+
+    "generative artificial intelligence": "generative ai",
+
+    "artificial intelligence": "artificial intelligence",
+
+    "natural language processing": "natural language processing",
+
+    "large language model": "large language model",
+
+    "openai api": "openai apis",
+    "openai apis": "openai apis",
 
     "amazon web services": "aws",
 
-    "google cloud": "gcp",
-
     "microsoft azure": "azure",
 
+    "google cloud platform": "gcp",
+    "google cloud": "gcp",
+
+    "azure kubernetes services": "azure kubernetes services",
+
+    "ci cd": "ci/cd",
+    "continuous integration": "ci/cd",
+    "continuous delivery": "ci/cd",
+    "continuous deployment": "ci/cd",
+
+    "site reliability engineering": "sre",
+
+    "object oriented programming": "oop",
+
+    "postgres": "postgresql",
+
+    "ibm db2": "db2",
+
+    "ibm as400": "as400",
+    "iseries": "as400",
+    "ibm i": "as400",
+
+    "ile rpg": "rpgle",
+
+    "digital signal processing": "dsp",
+
     "ms office": "microsoft office",
-    "m.s office": "microsoft office",
 
-    "scikit learn": "scikit-learn",
+    "advanced excel": "excel",
 
-    "fastapi": "fast api",
-
-    "spoken english": "english",
-    "fluent english": "english",
-    "good english communication": "communication",
+    "english communication": "communication",
 }
 
 
 # ==========================================================
 # RELATED SKILLS
 # ==========================================================
-#
-# These are NOT exact matches.
-# They provide partial credit only.
-#
-# Example:
-#
-# Resume: Docker
-# Job: DevOps
-#
-# Docker is related to DevOps, but Docker != DevOps.
-#
-# Therefore:
-#
-# Exact match  = 1.0
-# Related      = 0.5
-#
-# ==========================================================
-# ============================================================
-# RELATED SKILLS
-# ============================================================
-# These are strong relationships where one skill reasonably
-# indicates exposure to the other.
-#
+
 # IMPORTANT:
-# Do NOT add broad relationships such as:
-#   Python -> Machine Learning
-#   Python -> Data Science
-#   NumPy -> Data Analysis
-#   Git -> Software Development
+# These relationships are intentionally conservative.
 #
-# Those technologies may be used together, but possessing one
-# does not prove possession of the other.
-# ============================================================
+# We DO NOT consider:
+# Python -> Machine Learning
+# Python -> Data Science
+# NumPy -> Data Analysis
+# Git -> Software Development
+#
+# because those relationships are too broad to prove
+# actual skill equivalence.
 
 RELATED_SKILLS = {
 
     # -------------------------
     # DevOps
     # -------------------------
+
     "devops": {
         "docker",
         "kubernetes",
         "jenkins",
         "terraform",
+        "ansible",
         "ci/cd",
         "linux",
         "azure devops",
+        "sre",
     },
 
     "docker": {
@@ -336,6 +519,10 @@ RELATED_SKILLS = {
         "devops",
     },
 
+    "ansible": {
+        "devops",
+    },
+
     "ci/cd": {
         "devops",
         "jenkins",
@@ -346,9 +533,15 @@ RELATED_SKILLS = {
         "azure",
     },
 
+    "sre": {
+        "devops",
+    },
+
+
     # -------------------------
     # Cloud
     # -------------------------
+
     "aws": {
         "amazon web services",
     },
@@ -356,19 +549,25 @@ RELATED_SKILLS = {
     "azure": {
         "microsoft azure",
         "azure devops",
+        "azure kubernetes services",
     },
 
     "gcp": {
         "google cloud",
+        "google cloud platform",
     },
+
 
     # -------------------------
     # Databases
     # -------------------------
+
     "sql": {
         "mysql",
         "postgresql",
         "oracle",
+        "database management",
+        "dbms",
     },
 
     "mysql": {
@@ -386,28 +585,47 @@ RELATED_SKILLS = {
         "database management",
     },
 
+    "db2": {
+        "sql",
+        "database management",
+    },
+
     "database management": {
         "sql",
         "mysql",
         "postgresql",
         "oracle",
+        "dbms",
     },
 
-    # -------------------------
-    # Web Development
-    # -------------------------
-    "node.js": {
-        "nodejs",
-        "javascript",
+    "dbms": {
+        "sql",
+        "database management",
     },
 
-    "nodejs": {
+
+    # -------------------------
+    # Web
+    # -------------------------
+
+    "javascript": {
+        "typescript",
+        "react",
+        "angular",
+        "vue",
         "node.js",
+    },
+
+    "typescript": {
         "javascript",
+        "react",
+        "angular",
+        "node.js",
     },
 
     "react": {
         "javascript",
+        "typescript",
     },
 
     "angular": {
@@ -417,6 +635,11 @@ RELATED_SKILLS = {
 
     "vue": {
         "javascript",
+        "typescript",
+    },
+
+    "node.js": {
+        "javascript",
     },
 
     "django": {
@@ -424,6 +647,10 @@ RELATED_SKILLS = {
     },
 
     "flask": {
+        "python",
+    },
+
+    "fastapi": {
         "python",
     },
 
@@ -437,9 +664,11 @@ RELATED_SKILLS = {
         "spring",
     },
 
+
     # -------------------------
     # Programming
     # -------------------------
+
     "c++": {
         "c",
     },
@@ -448,24 +677,10 @@ RELATED_SKILLS = {
         "c",
     },
 
-    "typescript": {
-        "javascript",
-    },
-
-    "javascript": {
-        "typescript",
-    },
 
     # -------------------------
     # Software Engineering
     # -------------------------
-    "object oriented programming": {
-        "oop",
-    },
-
-    "oop": {
-        "object oriented programming",
-    },
 
     "software engineering": {
         "software development",
@@ -477,6 +692,10 @@ RELATED_SKILLS = {
 
     "design patterns": {
         "software engineering",
+        "oop",
+    },
+
+    "oop": {
         "object oriented programming",
     },
 
@@ -484,25 +703,16 @@ RELATED_SKILLS = {
         "software engineering",
     },
 
-    # -------------------------
-    # Data Analysis
-    # -------------------------
-    # Only closely equivalent concepts are related.
-    # Python/NumPy/Pandas are NOT automatically treated as
-    # "Data Analysis".
-    "data analytics": {
-        "data analysis",
+    "tdd": {
+        "unit testing",
+        "software engineering",
     },
 
-    "data analysis": {
-        "data analytics",
-    },
 
     # -------------------------
     # Machine Learning
     # -------------------------
-    # ML-related technologies can be related to ML,
-    # but general programming languages are NOT.
+
     "machine learning": {
         "scikit-learn",
         "xgboost",
@@ -516,12 +726,10 @@ RELATED_SKILLS = {
         "machine learning",
     },
 
-    # -------------------------
-    # Deep Learning
-    # -------------------------
     "deep learning": {
         "tensorflow",
         "pytorch",
+        "keras",
     },
 
     "tensorflow": {
@@ -532,31 +740,34 @@ RELATED_SKILLS = {
         "deep learning",
     },
 
-    # -------------------------
-    # AI
-    # -------------------------
-    "artificial intelligence": {
-        "ai",
+    "keras": {
+        "deep learning",
     },
 
-    "ai": {
-        "artificial intelligence",
-    },
 
     # -------------------------
-    # Product Management
+    # Signal Processing
     # -------------------------
-    "product management": {
-        "group product management",
+
+    "dsp": {
+        "signal processing",
+        "digital signal processing",
     },
 
-    "group product management": {
-        "product management",
+    "signal processing": {
+        "dsp",
     },
+
+    "matlab": {
+        "signal processing",
+        "dsp",
+    },
+
 
     # -------------------------
     # Marketing
     # -------------------------
+
     "performance marketing": {
         "paid marketing",
     },
@@ -575,193 +786,315 @@ RELATED_SKILLS = {
         "acquisition",
     },
 
+
     # -------------------------
-    # Microsoft Office
+    # Product
     # -------------------------
-    "microsoft office": {
-        "ms office",
+
+    "product management": {
+        "group product management",
     },
 
-    "ms office": {
-        "microsoft office",
+    "group product management": {
+        "product management",
     },
 }
 
 
 # ==========================================================
-# NORMALIZE SKILL
+# NORMALIZATION
 # ==========================================================
 
 def normalize_skill(skill):
     """
-    Convert a skill to a consistent canonical representation.
+    Normalize a skill into a consistent representation.
+
+    Examples:
+        Python -> python
+        NodeJS -> node.js
+        Scikit Learn -> scikit-learn
+        Amazon Web Services -> aws
     """
 
-    if not skill:
+    if skill is None:
         return ""
 
     skill = str(skill).strip().lower()
 
+    if not skill:
+        return ""
+
+    # Remove surrounding punctuation
+    skill = skill.strip(".,;:|/-_")
+
+    # Normalize whitespace
     skill = re.sub(r"\s+", " ", skill)
 
-    skill = skill.strip(" ,.;:-")
+    # Normalize common separators
+    skill = skill.replace(" / ", "/")
+    skill = skill.replace(" - ", "-")
 
-    return SKILL_ALIASES.get(skill, skill)
+    # Apply aliases
+    if skill in SKILL_ALIASES:
+        skill = SKILL_ALIASES[skill]
+
+    return skill
 
 
 # ==========================================================
-# CHECK WHETHER SKILL EXISTS IN TEXT
+# BUILD CONTROLLED VOCABULARY
 # ==========================================================
 
-def skill_exists(text, skill):
+def _build_skill_vocabulary():
     """
-    Check whether a skill appears in text.
+    Build normalized skill vocabulary from all categories.
     """
 
-    if not text or not skill:
-        return False
+    vocabulary = set()
+
+    for skills in SKILL_CATEGORIES.values():
+        for skill in skills:
+            normalized = normalize_skill(skill)
+
+            if normalized:
+                vocabulary.add(normalized)
+
+    # Include aliases
+    for alias, canonical in SKILL_ALIASES.items():
+        normalized_alias = normalize_skill(alias)
+        normalized_canonical = normalize_skill(canonical)
+
+        if normalized_alias:
+            vocabulary.add(normalized_alias)
+
+        if normalized_canonical:
+            vocabulary.add(normalized_canonical)
+
+    return vocabulary
+
+
+SKILL_VOCABULARY = _build_skill_vocabulary()
+
+
+# ==========================================================
+# TEXT NORMALIZATION
+# ==========================================================
+
+def _normalize_text(text):
+    """
+    Normalize text while preserving useful technical symbols.
+    """
+
+    if not text:
+        return ""
 
     text = str(text).lower()
 
-    skill = normalize_skill(skill)
+    # Normalize common Unicode characters
+    text = text.replace("–", "-")
+    text = text.replace("—", "-")
+    text = text.replace("’", "'")
 
-    if not skill:
-        return False
+    # Normalize whitespace
+    text = re.sub(r"\s+", " ", text)
 
-    pattern = (
-        r"(?<![a-z0-9])"
-        + re.escape(skill)
-        + r"(?![a-z0-9])"
-    )
-
-    return re.search(pattern, text) is not None
+    return text
 
 
 # ==========================================================
-# EXTRACT RESUME SKILLS
+# SKILL EXTRACTION FROM RESUME TEXT
 # ==========================================================
 
 def extract_skills(text):
     """
-    Extract recognized skills from resume text.
+    Extract controlled skills from resume text.
+
+    Only skills from SKILL_VOCABULARY are returned.
+    This prevents random words such as:
+
+        sr
+        usage
+        fluent
+        hiring
+
+    from being treated as skills.
     """
 
     if not text:
         return []
 
-    detected = set()
+    normalized_text = _normalize_text(text)
 
-    for category_skills in SKILL_CATEGORIES.values():
+    found_skills = set()
 
-        for skill in category_skills:
+    # Longer skills first to avoid partial matches.
+    skills_sorted = sorted(
+        SKILL_VOCABULARY,
+        key=len,
+        reverse=True
+    )
 
-            normalized = normalize_skill(skill)
+    for skill in skills_sorted:
 
-            if not normalized:
-                continue
+        escaped_skill = re.escape(skill)
 
-            if normalized in GENERIC_JOB_TAGS:
-                continue
+        # Allow spaces/hyphens/slashes in technical terms.
+        pattern = r"(?<![a-z0-9])" + escaped_skill + r"(?![a-z0-9])"
 
-            if skill_exists(text, skill):
-                detected.add(normalized)
+        if re.search(pattern, normalized_text):
 
-    return sorted(detected)
+            canonical = normalize_skill(skill)
+
+            if canonical:
+                found_skills.add(canonical)
+
+    return sorted(found_skills)
 
 
 # ==========================================================
-# EXTRACT RESUME SKILLS BY CATEGORY
+# SKILLS BY CATEGORY
 # ==========================================================
 
 def extract_skills_by_category(text):
     """
-    Return detected skills grouped by category.
+    Extract skills and group them by category.
     """
 
-    if not text:
-        return {}
+    normalized_text = _normalize_text(text)
 
     result = {}
 
-    for category, category_skills in SKILL_CATEGORIES.items():
+    for category, skills in SKILL_CATEGORIES.items():
 
-        detected = set()
+        found = set()
 
-        for skill in category_skills:
+        for skill in skills:
 
-            normalized = normalize_skill(skill)
+            normalized_skill_name = normalize_skill(skill)
 
-            if not normalized:
+            if not normalized_skill_name:
                 continue
 
-            if normalized in GENERIC_JOB_TAGS:
-                continue
+            escaped_skill = re.escape(normalized_skill_name)
 
-            if skill_exists(text, skill):
-                detected.add(normalized)
+            pattern = (
+                r"(?<![a-z0-9])"
+                + escaped_skill
+                + r"(?![a-z0-9])"
+            )
 
-        if detected:
-            result[category] = sorted(detected)
+            if re.search(pattern, normalized_text):
+
+                canonical = normalize_skill(
+                    SKILL_ALIASES.get(
+                        normalized_skill_name,
+                        normalized_skill_name
+                    )
+                )
+
+                if canonical:
+                    found.add(canonical)
+
+        if found:
+            result[category] = sorted(found)
 
     return result
 
 
 # ==========================================================
-# EXTRACT JOB SKILLS
+# JOB SKILL EXTRACTION
 # ==========================================================
 
-def extract_job_skills(tags_and_skills):
+def extract_job_skills(tags):
     """
-    Extract meaningful skills from the dataset's
-    comma-separated tagsAndSkills field.
+    Extract recognized skills from the dataset's
+    tagsAndSkills column.
+
+    The dataset contains comma-separated tags such as:
+
+        HDL,Coding,Radar,MATLAB,Python,DSP,Processing,Process
+
+    Only controlled technical/business skills are retained.
+
+    Result:
+
+        ['dsp', 'hdl', 'matlab', 'python', 'radar']
     """
 
-    if not tags_and_skills:
+    if tags is None:
         return []
 
-    raw_tags = str(tags_and_skills).split(",")
+    if isinstance(tags, float):
+        return []
 
-    job_skills = set()
+    text = str(tags)
 
-    controlled_skills = set()
+    if not text.strip():
+        return []
 
-    for category_skills in SKILL_CATEGORIES.values():
+    # Dataset tags are primarily comma-separated.
+    raw_tags = re.split(r"[,;|]", text)
 
-        for skill in category_skills:
-            controlled_skills.add(
-                normalize_skill(skill)
-            )
+    extracted = set()
 
     for raw_tag in raw_tags:
 
-        tag = raw_tag.strip().lower()
+        skill = normalize_skill(raw_tag)
 
-        if not tag:
+        if not skill:
             continue
 
-        tag = re.sub(r"\s+", " ", tag)
+        # Direct vocabulary match
+        if skill in SKILL_VOCABULARY:
 
-        tag = tag.strip(" ,.;:-")
+            canonical = normalize_skill(
+                SKILL_ALIASES.get(skill, skill)
+            )
 
-        normalized = normalize_skill(tag)
+            if canonical:
+                extracted.add(canonical)
 
-        if not normalized:
             continue
 
-        # Remove obvious noise.
-        if normalized in GENERIC_JOB_TAGS:
-            continue
+        # Some tags contain phrases such as:
+        # "Machine Learning Algorithms"
+        # "Microsoft Azure"
+        # "Object Oriented Programming"
+        #
+        # Check whether a known skill occurs inside
+        # the complete tag.
 
-        # Known controlled skill.
-        if normalized in controlled_skills:
-            job_skills.add(normalized)
-            continue
+        tag_text = _normalize_text(raw_tag)
 
-        # Keep meaningful multi-word domain-specific tags.
-        if len(normalized.split()) >= 2:
-            job_skills.add(normalized)
+        for known_skill in sorted(
+            SKILL_VOCABULARY,
+            key=len,
+            reverse=True
+        ):
 
-    return sorted(job_skills)
+            escaped_skill = re.escape(known_skill)
+
+            pattern = (
+                r"(?<![a-z0-9])"
+                + escaped_skill
+                + r"(?![a-z0-9])"
+            )
+
+            if re.search(pattern, tag_text):
+
+                canonical = normalize_skill(
+                    SKILL_ALIASES.get(
+                        known_skill,
+                        known_skill
+                    )
+                )
+
+                if canonical:
+                    extracted.add(canonical)
+
+                break
+
+    return sorted(extracted)
 
 
 # ==========================================================
@@ -770,28 +1103,68 @@ def extract_job_skills(tags_and_skills):
 
 if __name__ == "__main__":
 
-    resume = """
-    Software Engineer with Python, Java, SQL, MySQL,
-    Pandas, NumPy, Machine Learning, Git, GitHub and Docker.
-    """
+    sample_resume = """
+    Software Engineer with 3 years of experience.
 
-    job = """
-    Python, SQL, Machine Learning, Tableau,
-    Power BI, Git, Docker
+    B.Tech in Computer Science.
+
+    Skills:
+    Python, Java, SQL, MySQL, Pandas, NumPy,
+    Machine Learning, Scikit-learn, Git, GitHub,
+    Docker, MATLAB, DSP.
     """
 
     print("\n========================================")
-    print("       CAREERSENSE SKILL EXTRACTOR")
+    print("        CAREERSENSE SKILL TEST")
     print("========================================")
 
     print("\nResume Skills:")
 
-    for skill in extract_skills(resume):
-        print("-", skill)
+    skills = extract_skills(sample_resume)
 
-    print("\nJob Skills:")
+    for skill in skills:
+        print(f"- {skill}")
 
-    for skill in extract_job_skills(job):
-        print("-", skill)
+    print("\nSkills by Category:")
+
+    skills_by_category = extract_skills_by_category(
+        sample_resume
+    )
+
+    for category, category_skills in skills_by_category.items():
+
+        print(f"\n{category}:")
+
+        for skill in category_skills:
+            print(f"  - {skill}")
+
+    print("\n----------------------------------------")
+    print("JOB SKILL EXTRACTION TEST")
+    print("----------------------------------------")
+
+    test_jobs = [
+
+        "HDL,Coding,Radar,MATLAB,Python,DSP,Processing,Process",
+
+        "clp,as400,dbms,sql,sqlrpgle,seu,ile,software development",
+
+        "nas,vmware,nfs,cifs,unix,architecture,sql,itil",
+
+        "Algorithms,Machine Learning,Deep Learning,Python,"
+        "Model Development,Tensorflow,Data Structures,Pandas",
+
+        "Machine Learning,Python,Tensorflow,Generative Ai,"
+        "Natural Language Processing,LLM,Deep Learning,Pytorch",
+    ]
+
+    for tags in test_jobs:
+
+        print("\nTAGS:")
+        print(tags)
+
+        print("\nEXTRACTED:")
+
+        for skill in extract_job_skills(tags):
+            print(f"- {skill}")
 
     print("\n========================================")
