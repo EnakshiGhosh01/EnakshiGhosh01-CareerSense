@@ -1,6 +1,7 @@
 import pandas as pd
 
-from matching.similarity import calculate_text_similarity
+from matching.similarity import calculate_role_similarity
+
 from resume.skill_extractor import (
     extract_job_skills,
     normalize_skill,
@@ -23,9 +24,18 @@ ROLE_WEIGHT = 0.15
 # Related skill receives partial credit
 RELATED_SKILL_CREDIT = 0.50
 
-# Number of jobs on which expensive TF-IDF similarity
-# will be calculated.
+# Expensive role similarity is calculated only for
+# the strongest candidates.
 CANDIDATE_LIMIT = 500
+
+# When a job has only a very small number of extracted
+# skills, don't allow one matching skill to automatically
+# become a perfect overall skill score.
+MIN_EXTRACTED_JOB_SKILLS_FOR_FULL_CONFIDENCE = 3
+
+# Clearly unrelated roles receive a conservative penalty.
+# This does NOT remove the job completely.
+ROLE_FAMILY_PENALTY_THRESHOLD = 0.05
 
 
 # ==========================================================
@@ -45,7 +55,7 @@ def load_jobs():
 
 def calculate_skill_match(resume_skills, job_skills):
     """
-    Compare resume skills against job-required skills.
+    Compare candidate skills with job skills.
 
     Exact match:
         1.0 credit
@@ -55,6 +65,14 @@ def calculate_skill_match(resume_skills, job_skills):
 
     Missing:
         0.0 credit
+
+    The score considers:
+
+        1. Job skill coverage
+        2. Candidate skill relevance
+
+    This prevents a job with only one extracted skill
+    from automatically receiving 100%.
     """
 
     resume_set = {
@@ -158,7 +176,7 @@ def calculate_skill_match(resume_skills, job_skills):
     ]
 
     # ======================================================
-    # SCORE
+    # JOB-SIDE COVERAGE
     # ======================================================
 
     exact_count = len(exact_matches)
@@ -169,9 +187,52 @@ def calculate_skill_match(resume_skills, job_skills):
         + related_count * RELATED_SKILL_CREDIT
     )
 
-    skill_score = (
+    job_coverage = (
         total_points / len(job_set)
     )
+
+    # ======================================================
+    # CANDIDATE-SIDE RELEVANCE
+    # ======================================================
+
+    candidate_relevant_count = (
+        exact_count + related_count
+    )
+
+    if resume_set:
+
+        candidate_relevance = (
+            candidate_relevant_count
+            / len(resume_set)
+        )
+
+    else:
+        candidate_relevance = 0.0
+
+    # ======================================================
+    # COMBINED SKILL SCORE
+    # ======================================================
+
+    skill_score = (
+        0.75 * job_coverage
+        + 0.25 * candidate_relevance
+    )
+
+    # ======================================================
+    # LOW-INFORMATION JOB PENALTY
+    # ======================================================
+
+    if len(job_set) < MIN_EXTRACTED_JOB_SKILLS_FOR_FULL_CONFIDENCE:
+
+        confidence_factor = (
+            len(job_set)
+            / MIN_EXTRACTED_JOB_SKILLS_FOR_FULL_CONFIDENCE
+        )
+
+        skill_score *= (
+            0.75
+            + 0.25 * confidence_factor
+        )
 
     skill_score = min(
         max(skill_score, 0.0),
@@ -198,6 +259,18 @@ def calculate_experience_match(
 ):
     """
     Compare candidate experience with job requirement.
+
+    Candidate inside required range:
+        1.0
+
+    Candidate below minimum:
+        gradual penalty
+
+    Candidate above maximum:
+        small penalty, but still receives credit
+
+    Experience is treated as numeric information,
+    NOT TF-IDF text similarity.
     """
 
     try:
@@ -215,10 +288,27 @@ def calculate_experience_match(
     except (ValueError, TypeError):
         maximum_experience = minimum_experience
 
+    # ------------------------------------------------------
+    # Handle invalid ranges
+    # ------------------------------------------------------
+
     if maximum_experience < minimum_experience:
         maximum_experience = minimum_experience
 
-    # Candidate is within required range
+    # ------------------------------------------------------
+    # No meaningful experience requirement
+    # ------------------------------------------------------
+
+    if (
+        minimum_experience == 0
+        and maximum_experience == 0
+    ):
+        return 0.5
+
+    # ------------------------------------------------------
+    # Candidate is inside required range
+    # ------------------------------------------------------
+
     if (
         minimum_experience
         <= resume_experience
@@ -226,7 +316,10 @@ def calculate_experience_match(
     ):
         return 1.0
 
+    # ------------------------------------------------------
     # Candidate has less experience
+    # ------------------------------------------------------
+
     if resume_experience < minimum_experience:
 
         difference = (
@@ -241,7 +334,10 @@ def calculate_experience_match(
 
         return round(score, 4)
 
+    # ------------------------------------------------------
     # Candidate has more experience
+    # ------------------------------------------------------
+
     difference = (
         resume_experience
         - maximum_experience
@@ -268,11 +364,60 @@ def calculate_education_match(
     Estimate education compatibility.
 
     The dataset does not contain a dedicated education
-    requirement column.
+    requirement column, so education requirements are
+    inferred from the job title and description.
+
+    Generic "degree" alone is NOT treated as an
+    explicit education requirement.
+
+    Scores:
+
+        PhD requirement:
+            PhD       -> 1.0
+            Masters   -> 0.9
+            Bachelors -> 0.7
+
+        Masters requirement:
+            PhD       -> 1.0
+            Masters   -> 1.0
+            Bachelors -> 0.7
+
+        Bachelors requirement:
+            PhD       -> 1.0
+            Masters   -> 1.0
+            Bachelors -> 1.0
+            Diploma   -> 0.6
+
+        Diploma requirement:
+            Diploma   -> 1.0
+            Degree     -> 0.7
+
+        Higher-secondary requirement:
+            Higher secondary -> 1.0
+
+        No explicit requirement:
+            0.5
     """
 
     if not resume_education:
         return 0.0
+
+    # ------------------------------------------------------
+    # Normalize resume education
+    # ------------------------------------------------------
+
+    resume_education = {
+        str(item).lower().strip()
+        for item in resume_education
+        if str(item).strip()
+    }
+
+    if not resume_education:
+        return 0.0
+
+    # ------------------------------------------------------
+    # Combine job title + description
+    # ------------------------------------------------------
 
     job_text = (
         str(job_title)
@@ -280,54 +425,213 @@ def calculate_education_match(
         + str(job_description)
     ).lower()
 
-    degree_keywords = [
-        "b.tech",
-        "btech",
-        "bachelor",
-        "b.sc",
-        "bsc",
-        "bca",
-        "b.e",
-        "m.tech",
-        "mtech",
-        "m.e",
-        "master",
-        "m.sc",
-        "msc",
-        "mba",
-        "mca",
-        "phd",
-        "doctorate",
-        "degree"
-    ]
+    # ------------------------------------------------------
+    # Detect explicit education requirements
+    # ------------------------------------------------------
 
-    # No explicit education requirement
-    if not any(
-        keyword in job_text
-        for keyword in degree_keywords
-    ):
-        return 1.0
+    phd_required = any(
+        phrase in job_text
+        for phrase in [
+            "phd",
+            "ph.d",
+            "doctorate",
+            "doctoral degree"
+        ]
+    )
 
-    if "phd" in resume_education:
-        return 1.0
+    masters_required = any(
+        phrase in job_text
+        for phrase in [
+            "master's degree",
+            "masters degree",
+            "master degree",
+            "m.tech",
+            "mtech",
+            "m.e degree",
+            "m.e.",
+            "m.sc",
+            "msc",
+            "mba",
+            "mca",
+            "post graduate",
+            "postgraduate"
+        ]
+    )
 
-    if "masters" in resume_education:
-        return 1.0
+    bachelors_required = any(
+        phrase in job_text
+        for phrase in [
+            "bachelor's degree",
+            "bachelors degree",
+            "bachelor degree",
+            "bachelor's",
+            "bachelors",
+            "b.tech",
+            "btech",
+            "b.e degree",
+            "b.e.",
+            "b.sc",
+            "bsc",
+            "bca",
+            "graduation",
+            "undergraduate degree"
+        ]
+    )
 
-    if "bachelors" in resume_education:
-        return 0.9
+    diploma_required = any(
+        phrase in job_text
+        for phrase in [
+            "diploma",
+            "polytechnic"
+        ]
+    )
 
-    if "diploma" in resume_education:
-        return 0.7
+    higher_secondary_required = any(
+        phrase in job_text
+        for phrase in [
+            "12th",
+            "class 12",
+            "higher secondary",
+            "10+2",
+            "intermediate"
+        ]
+    )
 
-    if "higher_secondary" in resume_education:
+    # ------------------------------------------------------
+    # Generic "degree" is intentionally ignored
+    # ------------------------------------------------------
+
+    has_explicit_requirement = (
+        phd_required
+        or masters_required
+        or bachelors_required
+        or diploma_required
+        or higher_secondary_required
+    )
+
+    if not has_explicit_requirement:
         return 0.5
+
+    # ------------------------------------------------------
+    # Candidate education
+    # ------------------------------------------------------
+
+    has_phd = "phd" in resume_education
+    has_masters = "masters" in resume_education
+    has_bachelors = "bachelors" in resume_education
+    has_diploma = "diploma" in resume_education
+    has_higher_secondary = (
+        "higher_secondary" in resume_education
+    )
+
+    # ------------------------------------------------------
+    # PHD REQUIREMENT
+    # ------------------------------------------------------
+
+    if phd_required:
+
+        if has_phd:
+            return 1.0
+
+        if has_masters:
+            return 0.9
+
+        if has_bachelors:
+            return 0.7
+
+        if has_diploma:
+            return 0.4
+
+        if has_higher_secondary:
+            return 0.2
+
+    # ------------------------------------------------------
+    # MASTERS REQUIREMENT
+    # ------------------------------------------------------
+
+    if masters_required:
+
+        if has_phd:
+            return 1.0
+
+        if has_masters:
+            return 1.0
+
+        if has_bachelors:
+            return 0.7
+
+        if has_diploma:
+            return 0.4
+
+        if has_higher_secondary:
+            return 0.2
+
+    # ------------------------------------------------------
+    # BACHELORS REQUIREMENT
+    # ------------------------------------------------------
+
+    if bachelors_required:
+
+        if has_phd:
+            return 1.0
+
+        if has_masters:
+            return 1.0
+
+        if has_bachelors:
+            return 1.0
+
+        if has_diploma:
+            return 0.6
+
+        if has_higher_secondary:
+            return 0.3
+
+    # ------------------------------------------------------
+    # DIPLOMA REQUIREMENT
+    # ------------------------------------------------------
+
+    if diploma_required:
+
+        if has_phd:
+            return 0.7
+
+        if has_masters:
+            return 0.7
+
+        if has_bachelors:
+            return 0.7
+
+        if has_diploma:
+            return 1.0
+
+        if has_higher_secondary:
+            return 0.5
+
+    # ------------------------------------------------------
+    # HIGHER SECONDARY REQUIREMENT
+    # ------------------------------------------------------
+
+    if higher_secondary_required:
+
+        if (
+            has_phd
+            or has_masters
+            or has_bachelors
+        ):
+            return 1.0
+
+        if has_diploma:
+            return 0.9
+
+        if has_higher_secondary:
+            return 1.0
 
     return 0.5
 
 
 # ==========================================================
-# ROLE / TEXT SIMILARITY
+# ROLE / SEMANTIC SIMILARITY
 # ==========================================================
 
 def calculate_role_match(
@@ -336,18 +640,22 @@ def calculate_role_match(
     job_description
 ):
     """
-    Calculate TF-IDF cosine similarity.
+    Use the improved role similarity system.
+
+    The similarity module combines:
+
+        50% title similarity
+        30% role-focused TF-IDF + role keywords
+        20% role-family compatibility
+
+    This is much more appropriate for career-role
+    matching than generic full-text TF-IDF.
     """
 
-    job_text = (
-        str(job_title)
-        + " "
-        + str(job_description)
-    )
-
-    return calculate_text_similarity(
+    return calculate_role_similarity(
         resume_text,
-        job_text
+        job_title,
+        job_description
     )
 
 
@@ -439,6 +747,9 @@ def calculate_job_match(
             2
         ),
 
+        # Kept internally for future job-detail /
+        # skill-gap pages.
+
         "exact_matches": skill_result[
             "exact_matches"
         ],
@@ -467,12 +778,7 @@ def build_skill_index(jobs):
 
         skill -> job row indexes
 
-    Example:
-
-        python -> {12, 43, 105, 500, ...}
-        sql    -> {4, 20, 88, 120, ...}
-
-    This allows us to find relevant jobs without
+    This allows candidate jobs to be found without
     calculating every job individually.
     """
 
@@ -482,7 +788,6 @@ def build_skill_index(jobs):
 
     skill_index = {}
 
-    # Split the tags column into individual skills.
     exploded = (
         jobs[
             ["tagsAndSkills"]
@@ -493,12 +798,10 @@ def build_skill_index(jobs):
         .explode()
     )
 
-    # Normalize every tag.
     normalized_skills = exploded.map(
         normalize_skill
     )
 
-    # Build index
     for row_index, skill in normalized_skills.items():
 
         if not skill:
@@ -528,8 +831,8 @@ def find_candidate_jobs(
     """
     Find jobs that contain either:
 
-    1. An exact resume skill
-    2. A strongly related job skill
+        1. An exact resume skill
+        2. A strongly related job skill
 
     This is the fast filtering stage.
     """
@@ -541,10 +844,6 @@ def find_candidate_jobs(
     }
 
     candidate_indexes = set()
-
-    # ======================================================
-    # EXACT + RELATED JOB SKILLS
-    # ======================================================
 
     searchable_skills = set(
         resume_set
@@ -560,10 +859,6 @@ def find_candidate_jobs(
         searchable_skills.update(
             related
         )
-
-    # ======================================================
-    # LOOK UP JOBS
-    # ======================================================
 
     for skill in searchable_skills:
 
@@ -599,24 +894,25 @@ def rank_jobs(
     top_n=10
 ):
     """
-    Efficient two-stage job ranking.
+    Efficient multi-stage job ranking.
 
     Stage 1:
-        Use a skill index to identify relevant jobs.
+        Build skill index.
 
     Stage 2:
-        Calculate skill/experience/education scores
-        for those candidates.
+        Find relevant candidate jobs.
 
     Stage 3:
-        Keep the best candidates.
+        Calculate skill/experience/education scores.
 
     Stage 4:
-        Run expensive TF-IDF role similarity only
-        on those candidates.
+        Keep strongest candidates.
 
     Stage 5:
-        Return the final Top N jobs.
+        Calculate improved role similarity.
+
+    Stage 6:
+        Return final Top N.
     """
 
     # ======================================================
@@ -682,12 +978,14 @@ def rank_jobs(
             job["jobDescription"]
         )
 
-        # Preliminary score WITHOUT TF-IDF
+        # Preliminary score without role similarity
         preliminary_score = (
             SKILL_WEIGHT
             * skill_result["score"]
+
             + EXPERIENCE_WEIGHT
             * experience_score
+
             + EDUCATION_WEIGHT
             * education_score
         )
@@ -724,7 +1022,7 @@ def rank_jobs(
     )
 
     # ======================================================
-    # STAGE 2 — ROLE SIMILARITY
+    # STAGE 2 — IMPROVED ROLE SIMILARITY
     # ======================================================
 
     results = []
@@ -751,11 +1049,37 @@ def rank_jobs(
             "education_score"
         ]
 
+        # ==================================================
+        # ROLE COMPATIBILITY SAFETY CHECK
+        # ==================================================
+
+        # If role similarity is extremely low, we don't
+        # completely discard the job because the candidate
+        # may still possess useful transferable skills.
+        #
+        # Instead, apply a modest penalty to the role
+        # contribution.
+
+        if role_score < ROLE_FAMILY_PENALTY_THRESHOLD:
+
+            role_score *= 0.50
+
+        # ==================================================
+        # FINAL SCORE
+        # ==================================================
+
         final_score = (
-            SKILL_WEIGHT * skill_score
-            + EXPERIENCE_WEIGHT * experience_score
-            + EDUCATION_WEIGHT * education_score
-            + ROLE_WEIGHT * role_score
+            SKILL_WEIGHT
+            * skill_score
+
+            + EXPERIENCE_WEIGHT
+            * experience_score
+
+            + EDUCATION_WEIGHT
+            * education_score
+
+            + ROLE_WEIGHT
+            * role_score
         )
 
         final_score = min(
@@ -798,8 +1122,9 @@ def rank_jobs(
                 2
             ),
 
-            # Kept internally for later
-            # job-detail / skill-gap pages.
+            # Kept internally for future
+            # skill-gap / job-detail pages.
+
             "exact_matches": item[
                 "skill_result"
             ]["exact_matches"],
@@ -844,9 +1169,17 @@ def rank_jobs(
 
 if __name__ == "__main__":
 
-    print("\n========================================")
-    print("      CAREERSENSE JOB MATCHING TEST")
-    print("========================================")
+    print(
+        "\n========================================"
+    )
+
+    print(
+        "      CAREERSENSE JOB MATCHING TEST"
+    )
+
+    print(
+        "========================================"
+    )
 
     # ======================================================
     # LOAD DATA
@@ -869,6 +1202,8 @@ if __name__ == "__main__":
 
     Python, Java, SQL, MySQL, Pandas, NumPy,
     Machine Learning, Scikit-learn, Git, GitHub, Docker.
+
+    Machine Learning Career Prediction System.
     """
 
     resume_skills = [
@@ -890,6 +1225,23 @@ if __name__ == "__main__":
     resume_education = [
         "bachelors"
     ]
+
+    print(
+        "\n===== RESUME PROFILE ====="
+    )
+
+    print(
+        "Skills: "
+        + ", ".join(resume_skills)
+    )
+
+    print(
+        f"Experience: {resume_experience}"
+    )
+
+    print(
+        f"Education: {resume_education}"
+    )
 
     # ======================================================
     # RANK

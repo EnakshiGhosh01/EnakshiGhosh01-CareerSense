@@ -1,7 +1,20 @@
+import base64
+from pathlib import Path
+
 import streamlit as st
 
 from resume.parser import extract_resume_text
 from resume.analyzer import analyze_resume
+from ui.login import render_login
+from ui.register import render_register
+
+from auth.session import (
+    initialize_session,
+    is_logged_in,
+    logout_session,
+    get_current_user_name,
+    get_current_user_email,
+)
 
 
 # ==========================================================
@@ -12,26 +25,49 @@ st.set_page_config(
     page_title="CareerSense",
     page_icon="💼",
     layout="wide",
-    initial_sidebar_state="collapsed"
+    initial_sidebar_state="collapsed",
 )
 
 
 # ==========================================================
-# CUSTOM STYLING
+# INITIALIZE SESSION
+# ==========================================================
+
+initialize_session()
+
+
+# ==========================================================
+# PATHS
+# ==========================================================
+
+BASE_DIR = Path(__file__).resolve().parent
+UI_DIR = BASE_DIR / "ui"
+
+LANDING_HTML = UI_DIR / "landing.html"
+LANDING_IMAGE = UI_DIR / "landing-person.png"
+
+
+# ==========================================================
+# PAGE
+# ==========================================================
+
+page = st.query_params.get("page", "landing")
+
+
+# ==========================================================
+# COMMON CSS FOR STREAMLIT DASHBOARD
 # ==========================================================
 
 st.markdown(
     """
     <style>
 
-    /* Main content */
     .block-container {
         padding-top: 2rem;
         padding-bottom: 3rem;
         max-width: 1400px;
     }
 
-    /* Header */
     .main-title {
         font-size: 3rem;
         font-weight: 700;
@@ -44,7 +80,6 @@ st.markdown(
         margin-bottom: 2rem;
     }
 
-    /* Section headings */
     .section-title {
         font-size: 1.5rem;
         font-weight: 650;
@@ -52,7 +87,6 @@ st.markdown(
         margin-bottom: 1rem;
     }
 
-    /* Skill card */
     .skill-card {
         padding: 0.65rem 0.9rem;
         border-radius: 8px;
@@ -62,7 +96,6 @@ st.markdown(
         font-size: 0.95rem;
     }
 
-    /* Category card */
     .category-card {
         padding: 1rem;
         border-radius: 10px;
@@ -70,7 +103,6 @@ st.markdown(
         margin-bottom: 1rem;
     }
 
-    /* Score */
     .score-number {
         font-size: 3rem;
         font-weight: 700;
@@ -83,7 +115,6 @@ st.markdown(
         font-size: 0.9rem;
     }
 
-    /* Info cards */
     .info-card {
         padding: 1rem;
         border-radius: 10px;
@@ -93,8 +124,179 @@ st.markdown(
 
     </style>
     """,
-    unsafe_allow_html=True
+    unsafe_allow_html=True,
 )
+
+
+# ==========================================================
+# LANDING PAGE
+# ==========================================================
+
+def show_landing_page():
+    """
+    Load landing.html and embed the local landing-person.png
+    directly into the HTML as Base64.
+
+    No JavaScript is required.
+    """
+
+    if not LANDING_HTML.exists():
+
+        st.error(
+            "landing.html was not found."
+        )
+
+        st.code(
+            str(LANDING_HTML)
+        )
+
+        return
+
+    if not LANDING_IMAGE.exists():
+
+        st.error(
+            "landing-person.png was not found."
+        )
+
+        st.code(
+            str(LANDING_IMAGE)
+        )
+
+        return
+
+    # ------------------------------------------------------
+    # Read HTML
+    # ------------------------------------------------------
+
+    html = LANDING_HTML.read_text(
+        encoding="utf-8"
+    )
+
+    # ------------------------------------------------------
+    # Read image
+    # ------------------------------------------------------
+
+    image_bytes = LANDING_IMAGE.read_bytes()
+
+    image_base64 = base64.b64encode(
+        image_bytes
+    ).decode("utf-8")
+
+    image_data_url = (
+        "data:image/png;base64,"
+        + image_base64
+    )
+
+    # ------------------------------------------------------
+    # Replace local image reference
+    #
+    # Your landing.html should contain:
+    #
+    # src="landing-person.png"
+    #
+    # or:
+    #
+    # src="./landing-person.png"
+    # ------------------------------------------------------
+
+    html = html.replace(
+        'src="landing-person.png"',
+        f'src="{image_data_url}"'
+    )
+
+    html = html.replace(
+        "src='landing-person.png'",
+        f"src='{image_data_url}'"
+    )
+
+    html = html.replace(
+        'src="./landing-person.png"',
+        f'src="{image_data_url}"'
+    )
+
+    html = html.replace(
+        "src='./landing-person.png'",
+        f"src='{image_data_url}'"
+    )
+
+    # ------------------------------------------------------
+    # Display complete landing page
+    # ------------------------------------------------------
+
+    st.components.v1.html(
+        html,
+        height=1100,
+        scrolling=True,
+    )
+
+
+# ==========================================================
+# LANDING ROUTE
+# ==========================================================
+
+if page == "landing":
+
+    show_landing_page()
+
+    st.stop()
+
+
+# ==========================================================
+# LOGIN ROUTE
+# ==========================================================
+
+if page == "login":
+
+    render_login()
+
+    st.stop()
+
+
+# ==========================================================
+# REGISTER ROUTE
+# ==========================================================
+
+if page == "register":
+
+    render_register()
+
+    st.stop()
+
+
+# ==========================================================
+# DASHBOARD ACCESS CONTROL
+# ==========================================================
+
+if page == "dashboard":
+
+    # ------------------------------------------------------
+    # User is NOT logged in
+    # ------------------------------------------------------
+
+    if not is_logged_in():
+
+        # Clear current query parameters
+        st.query_params.clear()
+
+        # Return to landing page with a message
+        st.query_params["page"] = "landing"
+
+        st.query_params["message"] = "login_required"
+
+        st.stop()
+
+
+# ==========================================================
+# UNKNOWN PAGE
+# ==========================================================
+
+if page != "dashboard":
+
+    st.query_params.clear()
+
+    st.query_params["page"] = "landing"
+
+    st.rerun()
 
 
 # ==========================================================
@@ -105,7 +307,11 @@ def display_skill_cards(skills):
     """Display detected skills in a grid."""
 
     if not skills:
-        st.info("No recognized skills were detected.")
+
+        st.info(
+            "No recognized skills were detected."
+        )
+
         return
 
     columns = st.columns(4)
@@ -120,7 +326,7 @@ def display_skill_cards(skills):
                     {skill.title()}
                 </div>
                 """,
-                unsafe_allow_html=True
+                unsafe_allow_html=True,
             )
 
 
@@ -180,18 +386,21 @@ def get_score_message(score):
     """Return a simple interpretation of the resume score."""
 
     if score >= 85:
+
         return (
             "Excellent resume profile. Your resume contains "
             "strong skills and good supporting information."
         )
 
     elif score >= 70:
+
         return (
             "Good resume profile. A few improvements could "
             "make your resume stronger."
         )
 
     elif score >= 50:
+
         return (
             "Moderate resume profile. Consider improving "
             "your skills, projects, certifications, or "
@@ -199,6 +408,7 @@ def get_score_message(score):
         )
 
     else:
+
         return (
             "Your resume needs improvement. Add relevant "
             "skills, projects, education details, and "
@@ -207,22 +417,77 @@ def get_score_message(score):
 
 
 # ==========================================================
-# HEADER
+# CURRENT USER
 # ==========================================================
 
-st.markdown(
-    '<div class="main-title">💼 CareerSense</div>',
-    unsafe_allow_html=True
+current_user_name = get_current_user_name()
+current_user_email = get_current_user_email()
+
+
+# ==========================================================
+# DASHBOARD HEADER
+# ==========================================================
+
+header_col1, header_col2 = st.columns(
+    [5, 1]
 )
 
-st.markdown(
-    """
-    <div class="subtitle">
-        AI-Powered Career Intelligence and Job Matching System
-    </div>
-    """,
-    unsafe_allow_html=True
-)
+with header_col1:
+
+    st.markdown(
+        '<div class="main-title">'
+        '💼 CareerSense'
+        '</div>',
+        unsafe_allow_html=True,
+    )
+
+    st.markdown(
+        """
+        <div class="subtitle">
+            AI-Powered Career Intelligence and Job Matching System
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+with header_col2:
+
+    st.write("")
+
+    if st.button(
+        "Logout",
+        use_container_width=True,
+    ):
+
+        logout_session()
+
+        st.query_params.clear()
+
+        st.query_params["page"] = "landing"
+
+        st.rerun()
+
+
+# ==========================================================
+# USER INFORMATION
+# ==========================================================
+
+if current_user_name:
+
+    if current_user_email:
+
+        st.caption(
+            f"Logged in as **{current_user_name}** "
+            f"({current_user_email})"
+        )
+
+    else:
+
+        st.caption(
+            f"Logged in as **{current_user_name}**"
+        )
+
 
 st.divider()
 
@@ -234,7 +499,7 @@ st.divider()
 tab1, tab2 = st.tabs(
     [
         "📊 My Career Analysis",
-        "💼 Job Market Insights"
+        "💼 Job Market Insights",
     ]
 )
 
@@ -245,12 +510,15 @@ tab1, tab2 = st.tabs(
 
 with tab1:
 
-    st.header("My Career Analysis")
+    st.header(
+        "My Career Analysis"
+    )
 
     st.write(
         "Upload your resume to understand your skills, "
         "experience, education, and resume strength."
     )
+
 
     # ------------------------------------------------------
     # Resume Upload
@@ -259,8 +527,9 @@ with tab1:
     uploaded_resume = st.file_uploader(
         "Upload your resume",
         type=["pdf", "docx"],
-        help="Supported formats: PDF and DOCX"
+        help="Supported formats: PDF and DOCX",
     )
+
 
     # ======================================================
     # NO RESUME UPLOADED
@@ -273,70 +542,88 @@ with tab1:
         )
 
         st.markdown(
-            '<div class="section-title">What CareerSense analyzes</div>',
-            unsafe_allow_html=True
+            '<div class="section-title">'
+            'What CareerSense analyzes'
+            '</div>',
+            unsafe_allow_html=True,
         )
 
         col1, col2, col3, col4 = st.columns(4)
+
 
         with col1:
 
             st.markdown(
                 """
                 <div class="info-card">
+
                     <h4>🛠️ Skills</h4>
+
                     <p>
                     Detect technical and professional
                     skills from your resume.
                     </p>
+
                 </div>
                 """,
-                unsafe_allow_html=True
+                unsafe_allow_html=True,
             )
+
 
         with col2:
 
             st.markdown(
                 """
                 <div class="info-card">
+
                     <h4>💼 Experience</h4>
+
                     <p>
                     Extract your professional experience
                     for job matching.
                     </p>
+
                 </div>
                 """,
-                unsafe_allow_html=True
+                unsafe_allow_html=True,
             )
+
 
         with col3:
 
             st.markdown(
                 """
                 <div class="info-card">
+
                     <h4>🎓 Education</h4>
+
                     <p>
                     Identify your educational
                     qualifications.
                     </p>
+
                 </div>
                 """,
-                unsafe_allow_html=True
+                unsafe_allow_html=True,
             )
+
 
         with col4:
 
             st.markdown(
                 """
                 <div class="info-card">
+
                     <h4>📈 Resume Score</h4>
+
                     <p>
                     Evaluate your resume using
                     explainable scoring criteria.
                     </p>
+
                 </div>
                 """,
-                unsafe_allow_html=True
+                unsafe_allow_html=True,
             )
 
 
@@ -360,6 +647,7 @@ with tab1:
                 uploaded_resume
             )
 
+
             if not resume_text.strip():
 
                 st.error(
@@ -367,6 +655,7 @@ with tab1:
                     "this resume. Please upload a text-based "
                     "PDF or DOCX file."
                 )
+
 
             else:
 
@@ -380,6 +669,7 @@ with tab1:
 
                 score = result["score"]
 
+
                 # ==================================================
                 # PROFILE OVERVIEW
                 # ==================================================
@@ -388,36 +678,41 @@ with tab1:
                     '<div class="section-title">'
                     '📋 Profile Overview'
                     '</div>',
-                    unsafe_allow_html=True
+                    unsafe_allow_html=True,
                 )
 
                 col1, col2, col3 = st.columns(3)
+
 
                 with col1:
 
                     st.metric(
                         "Resume Score",
-                        f"{score['total_score']}/100"
+                        f"{score['total_score']}/100",
                     )
+
 
                 with col2:
 
                     st.metric(
                         "Experience",
-                        f"{result['experience']} years"
+                        f"{result['experience']} years",
                     )
+
 
                 with col3:
 
                     st.metric(
                         "Skills Detected",
-                        len(result["skills"])
+                        len(result["skills"]),
                     )
+
 
                 st.caption(
                     "Experience is extracted separately and "
                     "is not included in the Resume Score."
                 )
+
 
                 # ==================================================
                 # RESUME SCORE
@@ -427,12 +722,14 @@ with tab1:
                     '<div class="section-title">'
                     '📈 Resume Score'
                     '</div>',
-                    unsafe_allow_html=True
+                    unsafe_allow_html=True,
                 )
+
 
                 score_col1, score_col2 = st.columns(
                     [1, 2]
                 )
+
 
                 with score_col1:
 
@@ -446,8 +743,9 @@ with tab1:
                             out of 100
                         </div>
                         """,
-                        unsafe_allow_html=True
+                        unsafe_allow_html=True,
                     )
+
 
                 with score_col2:
 
@@ -461,6 +759,7 @@ with tab1:
                         score["total_score"] / 100
                     )
 
+
                 # ==================================================
                 # SCORE BREAKDOWN
                 # ==================================================
@@ -473,7 +772,9 @@ with tab1:
                     score
                 )
 
+
                 st.divider()
+
 
                 # ==================================================
                 # DETECTED SKILLS
@@ -487,7 +788,9 @@ with tab1:
                     result["skills"]
                 )
 
+
                 st.divider()
+
 
                 # ==================================================
                 # SKILLS BY CATEGORY
@@ -496,6 +799,7 @@ with tab1:
                 st.subheader(
                     "📂 Skills by Category"
                 )
+
 
                 if result["skills_by_category"]:
 
@@ -521,6 +825,7 @@ with tab1:
                         "No skill categories were detected."
                     )
 
+
                 # ==================================================
                 # EDUCATION
                 # ==================================================
@@ -529,18 +834,24 @@ with tab1:
                     "🎓 Education"
                 )
 
+
                 if result["education"]:
 
                     education_columns = st.columns(
-                        min(len(result["education"]), 3)
+                        min(
+                            len(result["education"]),
+                            3,
+                        )
                     )
+
 
                     for index, education in enumerate(
                         result["education"]
                     ):
 
                         with education_columns[
-                            index % len(education_columns)
+                            index
+                            % len(education_columns)
                         ]:
 
                             st.info(
@@ -556,6 +867,7 @@ with tab1:
                         "was detected."
                     )
 
+
                 # ==================================================
                 # EXPERIENCE
                 # ==================================================
@@ -564,16 +876,19 @@ with tab1:
                     "💼 Experience"
                 )
 
+
                 st.metric(
                     "Detected Experience",
-                    f"{result['experience']} years"
+                    f"{result['experience']} years",
                 )
+
 
                 st.caption(
                     "Internships and professional experience "
                     "will be handled separately as the resume "
                     "pipeline becomes more detailed."
                 )
+
 
                 # ==================================================
                 # EXTRACTED RESUME TEXT
@@ -587,8 +902,9 @@ with tab1:
                         "Extracted text",
                         resume_text,
                         height=350,
-                        label_visibility="collapsed"
+                        label_visibility="collapsed",
                     )
+
 
         # ==================================================
         # ERROR HANDLING
@@ -599,6 +915,7 @@ with tab1:
             st.error(
                 str(error)
             )
+
 
         except Exception as error:
 
@@ -616,18 +933,18 @@ with tab1:
 
 with tab2:
 
-    st.header("Job Market Insights")
+    st.header(
+        "Job Market Insights"
+    )
 
     st.write(
         "Explore job-market trends, salary information, "
         "skill demand, locations, and industries."
     )
 
-    # ------------------------------------------------------
-    # Placeholder metrics
-    # ------------------------------------------------------
 
     col1, col2, col3, col4 = st.columns(4)
+
 
     with col1:
 
@@ -636,12 +953,14 @@ with tab2:
             "—"
         )
 
+
     with col2:
 
         st.metric(
             "Average Salary",
             "—"
         )
+
 
     with col3:
 
@@ -650,6 +969,7 @@ with tab2:
             "—"
         )
 
+
     with col4:
 
         st.metric(
@@ -657,12 +977,15 @@ with tab2:
             "—"
         )
 
+
     st.divider()
+
 
     st.info(
         "Job-market analytics will be connected to the "
         "processed job dataset in the next stage."
     )
+
 
     st.markdown(
         """
