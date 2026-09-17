@@ -1,1890 +1,250 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-
     <meta charset="UTF-8">
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CareerSense - Register</title>
-
-
     <style>
-
-        * {
-            box-sizing: border-box;
+        :root {
+            --primary-color: #2563eb;
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+        }
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
             margin: 0;
             padding: 0;
-        }
-
-
-        body {
-
-            font-family:
-                Arial,
-                Helvetica,
-                sans-serif;
-
-            background: #f7f9ff;
-
-            color: #101b4d;
-
-            min-height: 100vh;
-        }
-
-
-        /* =====================================================
-           PAGE
-        ===================================================== */
-
-        .page {
-
-            min-height: 100vh;
-
             display: flex;
-
-            align-items: center;
-
             justify-content: center;
-
-            padding: 30px;
-
-            background:
-                radial-gradient(
-                    circle at 15% 20%,
-                    rgba(65, 133, 255, 0.10),
-                    transparent 30%
-                ),
-                #f8faff;
+            align-items: center;
+            min-height: 100vh;
         }
-
-
-        /* =====================================================
-           MAIN CARD
-        ===================================================== */
-
-        .register-card {
-
-            width: 100%;
-
-            max-width: 1050px;
-
-            min-height: 640px;
-
-            display: grid;
-
-            grid-template-columns:
-                1fr 1fr;
-
-            background: white;
-
-            border: 1px solid #dbe3f3;
-
-            border-radius: 14px;
-
-            overflow: hidden;
-
-            box-shadow:
-                0 12px 35px
-                rgba(27, 55, 110, 0.08);
-        }
-
-
-        /* =====================================================
-           LEFT SIDE
-        ===================================================== */
-
-        .register-left {
-
-            padding:
-                36px 54px 40px 54px;
-
+        .register-container {
             display: flex;
-
-            flex-direction: column;
+            background: var(--card-bg);
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+            width: 950px;
+            max-width: 100%;
+            overflow: hidden;
+            border: 1px solid var(--border-color);
         }
-
-
-        /* =====================================================
-           LOGO
-        ===================================================== */
-
+        .form-side {
+            flex: 1.1;
+            padding: 40px 48px;
+        }
+        .illustration-side {
+            flex: 0.9;
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 40px;
+            text-align: center;
+            border-left: 1px solid var(--border-color);
+        }
         .brand {
-
             display: flex;
-
             align-items: center;
-
             gap: 10px;
-
-            color: #101b4d;
-
-            text-decoration: none;
-
-            margin-bottom: 48px;
-
-            position: relative;
-        }
-
-
-        .brand-icon {
-
-            width: 32px;
-            height: 32px;
-
-            display: flex;
-
-            align-items: center;
-            justify-content: center;
-
-            color: #1468f5;
-        }
-
-
-        .brand-icon svg {
-
-            width: 32px;
-            height: 32px;
-        }
-
-
-        .brand-name {
-
+            font-weight: 700;
             font-size: 20px;
-
-            font-weight: 700;
-
-            letter-spacing: -0.4px;
+            color: var(--primary-color);
+            margin-bottom: 16px;
         }
-
-
-        .brand-tagline {
-
-            position: absolute;
-
-            margin-top: 43px;
-
-            margin-left: 42px;
-
-            font-size: 10px;
-
-            color: #30467b;
-
-            white-space: nowrap;
-        }
-
-
-        /* =====================================================
-           CONTENT
-        ===================================================== */
-
-        .register-content {
-
-            max-width: 430px;
-
-            width: 100%;
-
-            margin: 0 auto;
-        }
-
-
-        .register-content h1 {
-
-            font-size: 30px;
-
-            line-height: 1.2;
-
-            font-weight: 700;
-
-            color: #101b4d;
-
-            margin-bottom: 7px;
-        }
-
-
-        .register-subtitle {
-
-            font-size: 14px;
-
-            color: #52638e;
-
-            margin-bottom: 24px;
-        }
-
-
-        /* =====================================================
-           FORM
-        ===================================================== */
-
-        .form-group {
-
-            margin-bottom: 11px;
-        }
-
-
+        h2 { margin: 0 0 4px 0; font-size: 22px; color: var(--text-main); }
+        p.subtitle { color: var(--text-muted); font-size: 13px; margin-bottom: 24px; }
+        
+        .input-group { margin-bottom: 16px; }
+        .input-group label { display: block; font-size: 12px; font-weight: 500; margin-bottom: 4px; color: var(--text-main); }
         .input-wrapper {
-
             position: relative;
+            display: flex;
+            align-items: center;
         }
-
-
-        .input-icon {
-
-            position: absolute;
-
-            left: 14px;
-
-            top: 50%;
-
-            transform:
-                translateY(-50%);
-
-            width: 17px;
-
-            height: 17px;
-
-            color: #6075a6;
-
-            pointer-events: none;
-        }
-
-
         .input-wrapper input {
-
             width: 100%;
-
-            height: 43px;
-
-            border:
-                1px solid #ccd6ea;
-
-            border-radius: 6px;
-
-            background: white;
-
-            padding:
-                0 42px 0 42px;
-
-            color: #182554;
-
-            font-size: 13px;
-
+            padding: 10px 16px 10px 40px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 14px;
             outline: none;
-
-            transition: 0.2s ease;
+            transition: border-color 0.2s;
         }
-
-
-        .input-wrapper input::placeholder {
-
-            color: #68799f;
-        }
-
-
-        .input-wrapper input:focus {
-
-            border-color: #1672f9;
-
-            box-shadow:
-                0 0 0 3px
-                rgba(22, 114, 249, 0.10);
-        }
-
-
-        .password-toggle {
-
-            position: absolute;
-
-            right: 13px;
-
-            top: 50%;
-
-            transform:
-                translateY(-50%);
-
-            border: none;
-
-            background: transparent;
-
-            cursor: pointer;
-
-            color: #6075a6;
-
-            padding: 3px;
-        }
-
-
-        .password-toggle svg {
-
-            width: 17px;
-            height: 17px;
-        }
-
-
-        /* =====================================================
-           REGISTER BUTTON
-        ===================================================== */
-
-        .register-button {
-
+        .input-wrapper input:focus { border-color: var(--primary-color); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1); }
+        .input-icon { position: absolute; left: 14px; color: var(--text-muted); font-size: 15px; }
+        
+        .btn-primary {
             width: 100%;
-
-            height: 44px;
-
-            border: none;
-
-            border-radius: 6px;
-
-            background: #1475f5;
-
+            background: var(--primary-color);
             color: white;
-
-            font-size: 13px;
-
+            border: none;
+            padding: 11px;
+            border-radius: 8px;
+            font-size: 14px;
             font-weight: 600;
-
             cursor: pointer;
-
-            margin-top: 4px;
-
-            transition:
-                background 0.2s ease,
-                transform 0.2s ease,
-                box-shadow 0.2s ease;
+            transition: background 0.2s;
+            margin-top: 8px;
+            margin-bottom: 12px;
         }
-
-
-        .register-button:hover {
-
-            background: #0d62da;
-
-            box-shadow:
-                0 5px 15px
-                rgba(20, 117, 245, 0.25);
-
-            transform:
-                translateY(-1px);
-        }
-
-
-        /* =====================================================
-           DIVIDER
-        ===================================================== */
-
+        .btn-primary:hover { background: #1d4ed8; }
+        
         .divider {
-
-            display: flex;
-
-            align-items: center;
-
-            gap: 12px;
-
-            margin: 17px 0;
+            text-align: center;
+            position: relative;
+            margin: 14px 0;
+            color: var(--text-muted);
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
-
-
-        .divider-line {
-
-            flex: 1;
-
+        .divider::before, .divider::after {
+            content: "";
+            position: absolute;
+            top: 50%;
+            width: 42%;
             height: 1px;
-
-            background: #e1e6f1;
+            background: var(--border-color);
         }
-
-
-        .divider-text {
-
-            font-size: 11px;
-
-            color: #7886a5;
-        }
-
-
-        /* =====================================================
-           SOCIAL BUTTONS
-        ===================================================== */
-
-        .social-button {
-
+        .divider::before { left: 0; }
+        .divider::after { right: 0; }
+        
+        .btn-social {
             width: 100%;
-
-            height: 40px;
-
-            display: flex;
-
-            align-items: center;
-
-            justify-content: center;
-
-            position: relative;
-
-            border:
-                1px solid #d3dced;
-
-            border-radius: 6px;
-
             background: white;
-
-            color: #17244d;
-
-            font-size: 12px;
-
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 9px;
+            border-radius: 8px;
+            font-size: 13px;
             font-weight: 500;
-
             cursor: pointer;
-
-            margin-bottom: 9px;
-
-            transition: 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 10px;
+            transition: background 0.2s;
         }
-
-
-        .social-button:hover {
-
-            background: #f8faff;
-
-            border-color: #aebedb;
-        }
-
-
-        .social-icon {
-
-            position: absolute;
-
-            left: 16px;
-
-            width: 17px;
-
-            height: 17px;
-        }
-
-
-        .google-icon {
-
-            font-size: 17px;
-
-            font-weight: bold;
-
-            color: #4285f4;
-        }
-
-
-        .github-icon {
-
-            color: #111827;
-        }
-
-
-        /* =====================================================
-           LOGIN LINK
-        ===================================================== */
-
-        .bottom-text {
-
+        .btn-social:hover { background: #f8fafc; }
+        
+        .footer-text {
             text-align: center;
-
-            margin-top: 17px;
-
-            font-size: 11px;
-
-            color: #627298;
+            font-size: 12px;
+            color: var(--text-muted);
+            margin-top: 16px;
         }
-
-
-        .bottom-text a {
-
-            color: #1468f5;
-
-            font-weight: 600;
-
-            text-decoration: underline;
-
-            margin-left: 4px;
-        }
-
-
-        /* =====================================================
-           RIGHT SIDE
-        ===================================================== */
-
-        .register-right {
-
-            position: relative;
-
-            display: flex;
-
-            align-items: center;
-
-            justify-content: center;
-
-            overflow: hidden;
-
-            background:
-                radial-gradient(
-                    circle at 50% 42%,
-                    rgba(255,255,255,0.90),
-                    rgba(225,236,255,0.95) 40%,
-                    #dceaff 100%
-                );
-        }
-
-
-        /* =====================================================
-           DECORATIVE CIRCLES
-        ===================================================== */
-
-        .circle {
-
-            position: absolute;
-
-            border-radius: 50%;
-
-            background:
-                rgba(255,255,255,0.35);
-        }
-
-
-        .circle.one {
-
-            width: 180px;
-            height: 180px;
-
-            top: 65px;
-
-            right: -45px;
-        }
-
-
-        .circle.two {
-
-            width: 260px;
-            height: 260px;
-
-            bottom: -100px;
-
-            left: -70px;
-
-            background:
-                rgba(196,216,255,0.38);
-        }
-
-
-        .circle.three {
-
-            width: 90px;
-            height: 90px;
-
-            top: 100px;
-
-            left: 50px;
-        }
-
-
-        /* =====================================================
-           ILLUSTRATION
-        ===================================================== */
-
-        .illustration-area {
-
-            position: relative;
-
-            z-index: 2;
-
-            width: 100%;
-
-            height: 100%;
-
-            display: flex;
-
-            flex-direction: column;
-
-            align-items: center;
-
-            justify-content: center;
-        }
-
-
-        /* =====================================================
-           WOMAN + LAPTOP ILLUSTRATION
-        ===================================================== */
-
-        .person-scene {
-
-            width: 300px;
-
-            height: 330px;
-
-            position: relative;
-
-            margin-bottom: 4px;
-        }
-
-
-        /* Head */
-
-        .head {
-
-            position: absolute;
-
-            width: 64px;
-
-            height: 72px;
-
-            left: 103px;
-
-            top: 68px;
-
-            background: #f2b58f;
-
-            border-radius:
-                48% 48% 45% 45%;
-
-            z-index: 4;
-        }
-
-
-        /* Hair */
-
-        .hair {
-
-            position: absolute;
-
-            width: 85px;
-
-            height: 105px;
-
-            left: 92px;
-
-            top: 49px;
-
-            background: #182044;
-
-            border-radius:
-                52% 48% 42% 50%;
-
-            z-index: 3;
-        }
-
-
-        .hair-front {
-
-            position: absolute;
-
-            width: 28px;
-
-            height: 55px;
-
-            left: 91px;
-
-            top: 85px;
-
-            background: #182044;
-
-            border-radius:
-                80% 20% 60% 40%;
-
-            z-index: 5;
-        }
-
-
-        /* Face */
-
-        .eye {
-
-            position: absolute;
-
-            width: 5px;
-
-            height: 5px;
-
-            background: #182044;
-
-            border-radius: 50%;
-
-            top: 97px;
-
-            z-index: 6;
-        }
-
-
-        .eye.left {
-
-            left: 119px;
-        }
-
-
-        .eye.right {
-
-            left: 145px;
-        }
-
-
-        .smile {
-
-            position: absolute;
-
-            width: 16px;
-
-            height: 7px;
-
-            border-bottom:
-                2px solid #b65f5f;
-
-            border-radius: 0 0 50% 50%;
-
-            left: 127px;
-
-            top: 116px;
-
-            z-index: 6;
-        }
-
-
-        /* Neck */
-
-        .neck {
-
-            position: absolute;
-
-            width: 23px;
-
-            height: 26px;
-
-            left: 123px;
-
-            top: 130px;
-
-            background: #f2b58f;
-
-            z-index: 2;
-        }
-
-
-        /* Body */
-
-        .body {
-
-            position: absolute;
-
-            width: 115px;
-
-            height: 145px;
-
-            left: 78px;
-
-            top: 145px;
-
-            background: #354f91;
-
-            border-radius:
-                45px 45px 18px 18px;
-
-            z-index: 1;
-        }
-
-
-        /* Shirt */
-
-        .shirt {
-
-            position: absolute;
-
-            width: 70px;
-
-            height: 105px;
-
-            left: 101px;
-
-            top: 160px;
-
-            background: #e9edf6;
-
-            border-radius:
-                35px 35px 10px 10px;
-
-            z-index: 2;
-        }
-
-
-        /* Laptop */
-
-        .laptop {
-
-            position: absolute;
-
-            width: 145px;
-
-            height: 95px;
-
-            left: 78px;
-
-            top: 197px;
-
-            z-index: 8;
-        }
-
-
-        .laptop-screen {
-
-            width: 130px;
-
-            height: 83px;
-
-            margin: auto;
-
-            background: #f6f9ff;
-
-            border:
-                7px solid #4566ad;
-
-            border-radius:
-                7px 7px 3px 3px;
-
-            box-shadow:
-                0 8px 18px
-                rgba(44, 74, 139, 0.15);
-        }
-
-
-        .screen-inner {
-
-            width: 100%;
-            height: 100%;
-
-            background:
-                linear-gradient(
-                    135deg,
-                    #edf5ff,
-                    #d6e7ff
-                );
-        }
-
-
-        .laptop-base {
-
-            width: 150px;
-
-            height: 12px;
-
-            margin-left: -3px;
-
-            background: #5b76b0;
-
-            border-radius:
-                2px 2px 8px 8px;
-        }
-
-
-        /* =====================================================
-           FEATURE CARDS
-        ===================================================== */
-
-        .feature-card {
-
-            position: absolute;
-
-            z-index: 10;
-
-            min-width: 94px;
-
-            height: 35px;
-
-            padding:
-                0 12px;
-
-            display: flex;
-
-            align-items: center;
-
-            gap: 7px;
-
+        .footer-text a { color: var(--primary-color); text-decoration: none; font-weight: 500; }
+        
+        .steps-card {
             background: white;
-
-            border-radius: 6px;
-
-            box-shadow:
-                0 6px 18px
-                rgba(47, 77, 140, 0.14);
-
-            color: #15204d;
-
-            font-size: 10px;
-
-            font-weight: 600;
-        }
-
-
-        .feature-check {
-
-            width: 15px;
-            height: 15px;
-
+            padding: 14px 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            width: 80%;
             display: flex;
-
+            flex-direction: column;
+            gap: 10px;
+            text-align: left;
+            margin-bottom: 16px;
+            border: 1px solid var(--border-color);
+        }
+        .step-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 13px;
+            font-weight: 500;
+            color: var(--text-main);
+        }
+        .step-badge {
+            background: #dbeafe;
+            color: var(--primary-color);
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
             align-items: center;
             justify-content: center;
-
-            border-radius: 50%;
-
-            background: #4c83ef;
-
-            color: white;
-
-            font-size: 10px;
-
-            font-weight: bold;
+            font-size: 11px;
+            font-weight: 700;
         }
-
-
-        .feature-card.analyse {
-
-            top: 35px;
-
-            right: 5px;
-        }
-
-
-        .feature-card.match {
-
-            top: 77px;
-
-            right: -2px;
-        }
-
-
-        .feature-card.explore {
-
-            top: 119px;
-
-            right: 4px;
-        }
-
-
-        .feature-card.grow {
-
-            top: 161px;
-
-            right: 20px;
-        }
-
-
-        /* =====================================================
-           QUOTE
-        ===================================================== */
-
         .quote {
-
-            max-width: 260px;
-
-            text-align: center;
-
-            font-size: 18px;
-
-            line-height: 1.45;
-
-            color: #17429a;
-
             font-style: italic;
-
-            margin-top: 4px;
+            color: var(--text-muted);
+            font-size: 14px;
         }
-
-
-        /* =====================================================
-           RESPONSIVE
-        ===================================================== */
-
-        @media (max-width: 850px) {
-
-            .page {
-
-                padding: 20px;
-            }
-
-
-            .register-card {
-
-                grid-template-columns: 1fr;
-
-                max-width: 540px;
-            }
-
-
-            .register-right {
-
-                display: none;
-            }
-
-
-            .register-left {
-
-                padding: 30px;
-            }
-
-
-            .brand {
-
-                margin-bottom: 40px;
-            }
-        }
-
-
-        @media (max-width: 480px) {
-
-            .page {
-
-                padding: 10px;
-            }
-
-
-            .register-left {
-
-                padding: 25px 20px;
-            }
-
-
-            .register-content h1 {
-
-                font-size: 26px;
-            }
-        }
-
     </style>
-
 </head>
-
-
 <body>
-
-<div class="page">
-
-    <div class="register-card">
-
-
-        <!-- =================================================
-             LEFT SIDE
-        ================================================== -->
-
-        <div class="register-left">
-
-
-            <!-- BRAND -->
-
-            <a
-                href="?page=landing"
-                target="_parent"
-                class="brand"
-            >
-
-                <div class="brand-icon">
-
-                    <svg
-                        viewBox="0 0 40 40"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                    >
-
-                        <path
-                            d="M6 34V20"
-                            stroke="currentColor"
-                            stroke-width="4"
-                            stroke-linecap="round"
-                        />
-
-                        <path
-                            d="M16 34V14"
-                            stroke="currentColor"
-                            stroke-width="4"
-                            stroke-linecap="round"
-                        />
-
-                        <path
-                            d="M26 34V8"
-                            stroke="currentColor"
-                            stroke-width="4"
-                            stroke-linecap="round"
-                        />
-
-                        <path
-                            d="M4 16L14 8L23 12L35 4"
-                            stroke="currentColor"
-                            stroke-width="3"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                        />
-
-                        <path
-                            d="M29 4H35V10"
-                            stroke="currentColor"
-                            stroke-width="3"
-                            stroke-linecap="round"
-                            stroke-linejoin="round"
-                        />
-
-                    </svg>
-
-                </div>
-
-
-                <div class="brand-name">
-                    CareerSense
-                </div>
-
-
-                <div class="brand-tagline">
-                    Your Career. Smarter.
-                </div>
-
-            </a>
-
-
-            <!-- REGISTER CONTENT -->
-
-            <div class="register-content">
-
-
-                <h1>
-                    Create Your Account
-                </h1>
-
-
-                <p class="register-subtitle">
-                    Join CareerSense and start your journey
-                </p>
-
-
-                <!-- FULL NAME -->
-
-                <div class="form-group">
-
+    <div class="register-container">
+        <div class="form-side">
+            <div class="brand">📊 CareerSense</div>
+            <h2>Create Your Account</h2>
+            <p class="subtitle">Join CareerSense and start your journey</p>
+            
+            <form>
+                <div class="input-group">
+                    <label>Full Name</label>
                     <div class="input-wrapper">
-
-                        <svg
-                            class="input-icon"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                        >
-
-                            <circle
-                                cx="12"
-                                cy="8"
-                                r="4"
-                            />
-
-                            <path
-                                d="M4 21
-                                   c0-4.2
-                                   3.2-7
-                                   8-7
-                                   s8 2.8
-                                   8 7"
-                            />
-
-                        </svg>
-
-
-                        <input
-                            type="text"
-                            id="name"
-                            placeholder="Full Name"
-                            autocomplete="name"
-                        >
-
+                        <span class="input-icon">👤</span>
+                        <input type="text" placeholder="Enakshi Ghosh" required>
                     </div>
-
                 </div>
-
-
-                <!-- EMAIL -->
-
-                <div class="form-group">
-
+                
+                <div class="input-group">
+                    <label>Email address</label>
                     <div class="input-wrapper">
-
-                        <svg
-                            class="input-icon"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                        >
-
-                            <rect
-                                x="3"
-                                y="5"
-                                width="18"
-                                height="14"
-                                rx="2"
-                            />
-
-                            <path
-                                d="M3 7L12 13L21 7"
-                            />
-
-                        </svg>
-
-
-                        <input
-                            type="email"
-                            id="email"
-                            placeholder="Email address"
-                            autocomplete="email"
-                        >
-
+                        <span class="input-icon">✉️</span>
+                        <input type="email" placeholder="name@example.com" required>
                     </div>
-
                 </div>
-
-
-                <!-- PASSWORD -->
-
-                <div class="form-group">
-
+                
+                <div class="input-group">
+                    <label>Password</label>
                     <div class="input-wrapper">
-
-                        <svg
-                            class="input-icon"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                        >
-
-                            <rect
-                                x="5"
-                                y="10"
-                                width="14"
-                                height="10"
-                                rx="2"
-                            />
-
-                            <path
-                                d="M8 10V7
-                                   a4 4 0 0 1
-                                   8 0v3"
-                            />
-
-                        </svg>
-
-
-                        <input
-                            type="password"
-                            id="password"
-                            placeholder="Password"
-                            autocomplete="new-password"
-                        >
-
-
-                        <button
-                            type="button"
-                            class="password-toggle"
-                            onclick="togglePassword('password', 'eye1')"
-                        >
-
-                            <svg
-                                id="eye1"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2"
-                            >
-
-                                <path
-                                    d="M2 12s3.5-7 10-7
-                                       10 7 10 7
-                                       -3.5 7-10 7
-                                       -10-7-10-7Z"
-                                />
-
-                                <circle
-                                    cx="12"
-                                    cy="12"
-                                    r="3"
-                                />
-
-                            </svg>
-
-                        </button>
-
+                        <span class="input-icon">🔒</span>
+                        <input type="password" placeholder="••••••••" required>
                     </div>
-
                 </div>
 
-
-                <!-- CONFIRM PASSWORD -->
-
-                <div class="form-group">
-
+                <div class="input-group">
+                    <label>Confirm Password</label>
                     <div class="input-wrapper">
-
-                        <svg
-                            class="input-icon"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            stroke-width="2"
-                        >
-
-                            <rect
-                                x="5"
-                                y="10"
-                                width="14"
-                                height="10"
-                                rx="2"
-                            />
-
-                            <path
-                                d="M8 10V7
-                                   a4 4 0 0 1
-                                   8 0v3"
-                            />
-
-                        </svg>
-
-
-                        <input
-                            type="password"
-                            id="confirmPassword"
-                            placeholder="Confirm Password"
-                            autocomplete="new-password"
-                        >
-
-
-                        <button
-                            type="button"
-                            class="password-toggle"
-                            onclick="togglePassword('confirmPassword', 'eye2')"
-                        >
-
-                            <svg
-                                id="eye2"
-                                viewBox="0 0 24 24"
-                                fill="none"
-                                stroke="currentColor"
-                                stroke-width="2"
-                            >
-
-                                <path
-                                    d="M2 12s3.5-7 10-7
-                                       10 7 10 7
-                                       -3.5 7-10 7
-                                       -10-7-10-7Z"
-                                />
-
-                                <circle
-                                    cx="12"
-                                    cy="12"
-                                    r="3"
-                                />
-
-                            </svg>
-
-                        </button>
-
+                        <span class="input-icon">🔒</span>
+                        <input type="password" placeholder="••••••••" required>
                     </div>
-
                 </div>
-
-
-                <!-- REGISTER -->
-
-                <button
-                    class="register-button"
-                    onclick="submitRegister()"
-                >
-                    Register
-                </button>
-
-
-                <!-- DIVIDER -->
-
-                <div class="divider">
-
-                    <div class="divider-line"></div>
-
-                    <span class="divider-text">
-                        OR
-                    </span>
-
-                    <div class="divider-line"></div>
-
-                </div>
-
-
-                <!-- GOOGLE -->
-
-                <button
-                    class="social-button"
-                    onclick="socialRegister('Google')"
-                >
-
-                    <span class="social-icon google-icon">
-                        G
-                    </span>
-
-                    Continue with Google
-
-                </button>
-
-
-                <!-- GITHUB -->
-
-                <button
-                    class="social-button"
-                    onclick="socialRegister('GitHub')"
-                >
-
-                    <svg
-                        class="social-icon github-icon"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                    >
-
-                        <path
-                            d="M12 .5
-                            C5.65.5
-                            .5 5.65
-                            .5 12
-                            c0 5.08
-                            3.29 9.39
-                            7.86 10.91
-                            .58.11
-                            .79-.25
-                            .79-.55
-                            v-2.13
-                            c-3.2.7
-                            -3.88-1.35
-                            -3.88-1.35
-                            -.53-1.34
-                            -1.28-1.7
-                            -1.28-1.7
-                            -1.04-.71
-                            .08-.7
-                            .08-.7
-                            1.15.08
-                            1.76 1.18
-                            1.76 1.18
-                            1.02 1.75
-                            2.67 1.25
-                            3.32.96
-                            .1-.75
-                            .4-1.25
-                            .72-1.54
-                            -2.55-.29
-                            -5.23-1.28
-                            -5.23-5.7
-                            0-1.26
-                            .45-2.29
-                            1.18-3.1
-                            -.12-.29
-                            -.51-1.46
-                            .11-3.05
-                            0 0
-                            .96-.31
-                            3.15 1.18
-                            a10.9 10.9 0 0 1
-                            5.74 0
-                            c2.19-1.49
-                            3.15-1.18
-                            3.15-1.18
-                            .62 1.59
-                            .23 2.76
-                            .11 3.05
-                            .73.81
-                            1.18 1.84
-                            1.18 3.1
-                            0 4.43
-                            -2.69 5.41
-                            -5.25 5.7
-                            .41.35
-                            .77 1.04
-                            .77 2.1
-                            v3.11
-                            c0 .3.21.66.8.55
-                            A11.5 11.5 0 0 0
-                            23.5 12
-                            C23.5 5.65
-                            18.35.5
-                            12 .5Z"
-                        />
-
-                    </svg>
-
-                    Continue with GitHub
-
-                </button>
-
-
-                <!-- LOGIN -->
-
-                <div class="bottom-text">
-
-                    Already have an account?
-
-                    <a
-                        href="?page=login"
-                        target="_parent"
-                    >
-                        Login here
-                    </a>
-
-                </div>
-
+                
+                <button type="submit" class="btn-primary">Register</button>
+            </form>
+            
+            <div class="divider">OR</div>
+            
+            <button class="btn-social">🔵 Continue with Google</button>
+            <button class="btn-social">⚫ Continue with GitHub</button>
+            
+            <div class="footer-text">
+                Already have an account? <a href="#">Login here</a>
             </div>
-
         </div>
-
-
-        <!-- =================================================
-             RIGHT SIDE
-        ================================================== -->
-
-        <div class="register-right">
-
-            <div class="circle one"></div>
-            <div class="circle two"></div>
-            <div class="circle three"></div>
-
-
-            <div class="illustration-area">
-
-
-                <div class="person-scene">
-
-
-                    <!-- FEATURE CARDS -->
-
-                    <div class="feature-card analyse">
-
-                        <span class="feature-check">
-                            ✓
-                        </span>
-
-                        Analyse
-
-                    </div>
-
-
-                    <div class="feature-card match">
-
-                        <span class="feature-check">
-                            ✓
-                        </span>
-
-                        Match
-
-                    </div>
-
-
-                    <div class="feature-card explore">
-
-                        <span class="feature-check">
-                            ✓
-                        </span>
-
-                        Explore
-
-                    </div>
-
-
-                    <div class="feature-card grow">
-
-                        <span class="feature-check">
-                            ✓
-                        </span>
-
-                        Grow
-
-                    </div>
-
-
-                    <!-- HAIR -->
-
-                    <div class="hair"></div>
-
-                    <div class="hair-front"></div>
-
-
-                    <!-- HEAD -->
-
-                    <div class="head"></div>
-
-
-                    <!-- FACE -->
-
-                    <div class="eye left"></div>
-
-                    <div class="eye right"></div>
-
-                    <div class="smile"></div>
-
-
-                    <!-- NECK -->
-
-                    <div class="neck"></div>
-
-
-                    <!-- BODY -->
-
-                    <div class="body"></div>
-
-                    <div class="shirt"></div>
-
-
-                    <!-- LAPTOP -->
-
-                    <div class="laptop">
-
-                        <div class="laptop-screen">
-
-                            <div class="screen-inner"></div>
-
-                        </div>
-
-                        <div class="laptop-base"></div>
-
-                    </div>
-
-                </div>
-
-
-                <div class="quote">
-
-                    “Create today,<br>
-                    a better tomorrow.”
-
-                </div>
-
+        
+        <div class="illustration-side">
+            <div class="steps-card">
+                <div class="step-item"><div class="step-badge">✓</div> Analyse your resume</div>
+                <div class="step-item"><div class="step-badge">✓</div> Match top jobs</div>
+                <div class="step-item"><div class="step-badge">✓</div> Explore market insights</div>
+                <div class="step-item"><div class="step-badge" style="background:#2563eb; color:white;">✓</div> Grow your career</div>
             </div>
-
+            <div class="quote">"Create today, a better tomorrow."</div>
         </div>
-
     </div>
-
-</div>
-
-
-<script>
-
-
-    /* =====================================================
-       PASSWORD VISIBILITY
-    ===================================================== */
-
-    function togglePassword(
-        inputId,
-        eyeId
-    ) {
-
-        const input =
-            document.getElementById(inputId);
-
-        const eye =
-            document.getElementById(eyeId);
-
-
-        if (input.type === "password") {
-
-            input.type = "text";
-
-
-            eye.innerHTML = `
-
-                <path d="M3 3L21 21"/>
-
-                <path d="
-                    M10.6 10.6
-                    A2 2 0 0 0
-                    13.4 13.4
-                "/>
-
-                <path d="
-                    M9.88 5.08
-                    A10.8 10.8 0 0 1
-                    12 5
-                    c6.5 0 10 7
-                    10 7
-                    a18.4 18.4 0 0 1
-                    -3.14 3.8
-                "/>
-
-                <path d="
-                    M6.61 6.61
-                    C3.92 8.52
-                    2 12
-                    2 12
-                    s3.5 7
-                    10 7
-                    a10.8 10.8 0 0 0
-                    3.09-.45
-                "/>
-
-            `;
-
-        } else {
-
-            input.type = "password";
-
-
-            eye.innerHTML = `
-
-                <path
-                    d="
-                        M2 12
-                        s3.5-7 10-7
-                        10 7 10 7
-                        -3.5 7-10 7
-                        -10-7-10-7Z
-                    "
-                />
-
-                <circle
-                    cx="12"
-                    cy="12"
-                    r="3"
-                />
-
-            `;
-        }
-    }
-
-
-    /* =====================================================
-       REGISTER
-    ===================================================== */
-
-    function submitRegister() {
-
-        const name =
-            document
-                .getElementById("name")
-                .value
-                .trim();
-
-
-        const email =
-            document
-                .getElementById("email")
-                .value
-                .trim();
-
-
-        const password =
-            document
-                .getElementById("password")
-                .value;
-
-
-        const confirmPassword =
-            document
-                .getElementById("confirmPassword")
-                .value;
-
-
-        if (!name) {
-
-            alert(
-                "Please enter your full name."
-            );
-
-            return;
-        }
-
-
-        if (!email) {
-
-            alert(
-                "Please enter your email address."
-            );
-
-            return;
-        }
-
-
-        if (!password) {
-
-            alert(
-                "Please enter a password."
-            );
-
-            return;
-        }
-
-
-        if (password.length < 6) {
-
-            alert(
-                "Password must contain at least 6 characters."
-            );
-
-            return;
-        }
-
-
-        if (!confirmPassword) {
-
-            alert(
-                "Please confirm your password."
-            );
-
-            return;
-        }
-
-
-        if (password !== confirmPassword) {
-
-            alert(
-                "Passwords do not match."
-            );
-
-            return;
-        }
-
-
-        /*
-         * Actual account creation will be handled
-         * by register.py / authentication.py.
-         */
-
-        window.parent.postMessage(
-
-            {
-                type: "register",
-
-                name: name,
-
-                email: email,
-
-                password: password,
-
-                confirmPassword:
-                    confirmPassword
-            },
-
-            "*"
-        );
-    }
-
-
-    /* =====================================================
-       SOCIAL REGISTRATION
-    ===================================================== */
-
-    function socialRegister(provider) {
-
-        alert(
-            provider +
-            " registration will be connected when OAuth is configured."
-        );
-    }
-
-
-</script>
-
 </body>
 </html>
