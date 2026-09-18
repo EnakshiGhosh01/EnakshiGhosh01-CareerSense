@@ -1,54 +1,328 @@
 import sqlite3
 import hashlib
-import os
+import secrets
+from pathlib import Path
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "..", "data", "careersense.db")
 
-def hash_password(password):
-    return hashlib.sha256(password.encode()).hexdigest()
+# ==========================================================
+# BASE DIRECTORY
+# ==========================================================
 
-def init_db():
-    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    cursor.execute('''
+BASE_DIR = Path(__file__).resolve().parent.parent
+
+DATA_DIR = BASE_DIR / "data"
+
+DATABASE_PATH = DATA_DIR / "careersense.db"
+
+
+# ==========================================================
+# DATABASE CONNECTION
+# ==========================================================
+
+def get_connection():
+
+    DATA_DIR.mkdir(
+        parents=True,
+        exist_ok=True
+    )
+
+    return sqlite3.connect(
+        DATABASE_PATH
+    )
+
+
+# ==========================================================
+# INITIALIZE DATABASE
+# ==========================================================
+
+def initialize_database():
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute(
+        """
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            fullname TEXT NOT NULL,
+            name TEXT NOT NULL,
             email TEXT UNIQUE NOT NULL,
-            password TEXT NOT NULL
+            password_hash TEXT NOT NULL,
+            salt TEXT NOT NULL
         )
-    ''')
-    conn.commit()
-    conn.close()
+        """
+    )
 
-def register_user(fullname, email, password):
-    init_db()
+    connection.commit()
+
+    connection.close()
+
+
+# ==========================================================
+# HASH PASSWORD
+# ==========================================================
+
+def hash_password(password):
+
+    salt = secrets.token_hex(16)
+
+    password_hash = hashlib.pbkdf2_hmac(
+        "sha256",
+        password.encode("utf-8"),
+        salt.encode("utf-8"),
+        100_000
+    ).hex()
+
+    return password_hash, salt
+
+
+# ==========================================================
+# VERIFY PASSWORD
+# ==========================================================
+
+def verify_password(
+    password,
+    stored_hash,
+    salt
+):
+
+    password_hash = hashlib.pbkdf2_hmac(
+        "sha256",
+        password.encode("utf-8"),
+        salt.encode("utf-8"),
+        100_000
+    ).hex()
+
+    return password_hash == stored_hash
+
+
+# ==========================================================
+# REGISTER USER
+# ==========================================================
+
+def register_user(
+    name,
+    email,
+    password
+):
+
+    name = name.strip()
+
+    email = email.strip().lower()
+
+
+    # ------------------------------------------------------
+    # VALIDATION
+    # ------------------------------------------------------
+
+    if not name:
+
+        return False, "Please enter your full name."
+
+
+    if not email:
+
+        return False, "Please enter your email address."
+
+
+    if not password:
+
+        return False, "Please enter a password."
+
+
+    if len(password) < 6:
+
+        return False, (
+            "Password must contain at least 6 characters."
+        )
+
+
+    # ------------------------------------------------------
+    # HASH PASSWORD
+    # ------------------------------------------------------
+
+    password_hash, salt = hash_password(
+        password
+    )
+
+
+    # ------------------------------------------------------
+    # INSERT USER
+    # ------------------------------------------------------
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
     try:
-        conn = sqlite3.connect(DB_PATH)
-        cursor = conn.cursor()
-        hashed_pw = hash_password(password)
-        cursor.execute("INSERT INTO users (fullname, email, password) VALUES (?, ?, ?)", (fullname, email, hashed_pw))
-        conn.commit()
-        conn.close()
-        return True, "Registration successful!"
+
+        cursor.execute(
+            """
+            INSERT INTO users
+            (
+                name,
+                email,
+                password_hash,
+                salt
+            )
+            VALUES (?, ?, ?, ?)
+            """,
+            (
+                name,
+                email,
+                password_hash,
+                salt
+            )
+        )
+
+        connection.commit()
+
+        return True, "Account created successfully."
+
+
     except sqlite3.IntegrityError:
-        return False, "This email is already registered!"
-    except Exception as e:
-        return False, str(e)
 
-def verify_user(email, password):
-    init_db()
-    conn = sqlite3.connect(DB_PATH)
-    cursor = conn.cursor()
-    hashed_pw = hash_password(password)
-    cursor.execute("SELECT fullname, email FROM users WHERE email = ? AND password = ?", (email, hashed_pw))
+        return False, (
+            "An account with this email already exists."
+        )
+
+
+    finally:
+
+        connection.close()
+
+
+# ==========================================================
+# AUTHENTICATE USER
+# ==========================================================
+
+def authenticate_user(
+    email,
+    password
+):
+
+    email = email.strip().lower()
+
+
+    # ------------------------------------------------------
+    # NEVER ALLOW EMPTY PASSWORD
+    # ------------------------------------------------------
+
+    if not email:
+
+        return None
+
+
+    if not password:
+
+        return None
+
+
+    # ------------------------------------------------------
+    # FIND USER BY EMAIL
+    # ------------------------------------------------------
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute(
+        """
+        SELECT
+            id,
+            name,
+            email,
+            password_hash,
+            salt
+        FROM users
+        WHERE email = ?
+        """,
+        (email,)
+    )
+
     user = cursor.fetchone()
-    conn.close()
-    if user:
-        return True, user[0]  # Returns user's full name
-    return False, None
 
-# Alias function to support imports looking for authenticate_user
-def authenticate_user(email, password):
-    return verify_user(email, password)
+    connection.close()
+
+
+    # ------------------------------------------------------
+    # USER NOT FOUND
+    # ------------------------------------------------------
+
+    if user is None:
+
+        return None
+
+
+    # ------------------------------------------------------
+    # GET USER DATA
+    # ------------------------------------------------------
+
+    user_id = user[0]
+
+    name = user[1]
+
+    user_email = user[2]
+
+    stored_hash = user[3]
+
+    salt = user[4]
+
+
+    # ------------------------------------------------------
+    # VERIFY PASSWORD
+    # ------------------------------------------------------
+
+    if not verify_password(
+        password,
+        stored_hash,
+        salt
+    ):
+
+        return None
+
+
+    # ------------------------------------------------------
+    # RETURN AUTHENTICATED USER
+    # ------------------------------------------------------
+
+    return {
+        "id": user_id,
+        "name": name,
+        "email": user_email
+    }
+
+
+# ==========================================================
+# CHECK IF USER EXISTS
+# ==========================================================
+
+def user_exists(email):
+
+    email = email.strip().lower()
+
+    connection = get_connection()
+
+    cursor = connection.cursor()
+
+    cursor.execute(
+        """
+        SELECT id
+        FROM users
+        WHERE email = ?
+        """,
+        (email,)
+    )
+
+    result = cursor.fetchone()
+
+    connection.close()
+
+    return result is not None
+
+
+# ==========================================================
+# INITIALIZE DATABASE
+# ==========================================================
+
+initialize_database()
