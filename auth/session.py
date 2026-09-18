@@ -1,14 +1,30 @@
 import streamlit as st
 
-def init_session_state():
+def initialize_session():
     if "logged_in" not in st.session_state:
         st.session_state.logged_in = False
-    if "user_email" not in st.session_state:
-        st.session_state.user_email = None
-    if "user_name" not in st.session_state:
-        st.session_state.user_name = None
-    if "page" not in st.session_state:
-        st.session_state.page = "landing"  # Options: landing, login, register, app
+
+    if "user" not in st.session_state:
+        st.session_state.user = None
+
+def login_session(user):
+    st.session_state.logged_in = True
+    st.session_state.user = user
+
+def logout_session():
+    st.session_state.logged_in = False
+    st.session_state.user = None
 
 def is_logged_in():
-    return st.session_state.get("logged_in", False)
+    return st.session_state.logged_in
+
+def get_current_user():
+    return st.session_state.user
+
+def get_current_user_name():
+    user = get_current_user()
+    return user["name"] if user else "Guest"
+
+def get_current_user_email():
+    user = get_current_user()
+    return user["email"] if user else "Not available"
