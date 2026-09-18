@@ -1,8 +1,26 @@
-import json
-import sys
-from pathlib import Path
-
 import streamlit as st
+from pathlib import Path
+import sys
+
+
+# ==========================================================
+# BASE DIRECTORY
+# ==========================================================
+
+CURRENT_DIR = Path(__file__).resolve().parent
+
+if str(CURRENT_DIR) not in sys.path:
+    sys.path.insert(0, str(CURRENT_DIR))
+
+
+# ==========================================================
+# AUTHENTICATION
+# ==========================================================
+
+from auth.authentication import (
+    authenticate_user,
+    register_user,
+)
 
 from auth.session import (
     initialize_session,
@@ -13,13 +31,19 @@ from auth.session import (
 
 
 # ==========================================================
-# BASE DIRECTORY
+# UI MODULES
 # ==========================================================
 
-current_dir = Path(__file__).resolve().parent
+from ui.landing import render_landing
 
-if str(current_dir) not in sys.path:
-    sys.path.append(str(current_dir))
+from ui.auth import (
+    render_login_ui,
+    render_register_ui,
+)
+
+from ui.career_analysis import (
+    render_career_analysis,
+)
 
 
 # ==========================================================
@@ -42,153 +66,21 @@ initialize_session()
 
 
 # ==========================================================
-# DEFAULT PAGE
-# ==========================================================
-
-if "current_page" not in st.session_state:
-    st.session_state.current_page = "landing"
-
-
-# ==========================================================
-# USERS FILE
-# ==========================================================
-
-USERS_FILE = current_dir / "users.json"
-
-
-# ==========================================================
-# LOAD USERS
-# ==========================================================
-
-def load_users():
-
-    if USERS_FILE.exists():
-
-        try:
-
-            with open(
-                USERS_FILE,
-                "r",
-                encoding="utf-8",
-            ) as file:
-
-                data = json.load(file)
-
-            if isinstance(data, list):
-                return data
-
-        except Exception:
-            pass
-
-    return [
-        "test@example.com",
-        "enakshi@example.com",
-        "enakshi.ghosh@gmail.com",
-    ]
-
-
-# ==========================================================
-# SAVE USERS
-# ==========================================================
-
-def save_users(users):
-
-    with open(
-        USERS_FILE,
-        "w",
-        encoding="utf-8",
-    ) as file:
-
-        json.dump(
-            users,
-            file,
-            indent=4,
-        )
-
-
-# ==========================================================
-# LEGACY USERS.JSON SESSION DATA
-# ==========================================================
-
-if "registered_users" not in st.session_state:
-    st.session_state.registered_users = load_users()
-
-if "registered_user_names" not in st.session_state:
-    st.session_state.registered_user_names = {}
-
-
-# ==========================================================
-# URL → SESSION STATE
-# ==========================================================
-
-requested_page = st.query_params.get(
-    "page",
-    None,
-)
-
-valid_pages = {
-    "landing",
-    "login",
-    "register",
-    "dashboard",
-}
-
-if requested_page in valid_pages:
-    st.session_state.current_page = requested_page
-
-
-# ==========================================================
-# IMPORT UI MODULES
-# ==========================================================
-
-try:
-
-    from ui.landing import render_landing
-
-    from ui.auth import (
-        render_login_ui,
-        render_register_ui,
-    )
-
-    from ui.career_analysis import (
-        render_career_analysis,
-    )
-
-except Exception as exc:
-
-    st.error(
-        "🚨 Import Failed! "
-        "Please check your `ui/` folder structure."
-    )
-
-    st.exception(exc)
-    st.stop()
-
-
-# ==========================================================
-# PAGE NAVIGATION
-# ==========================================================
-
-def go_to_page(page):
-
-    if page not in valid_pages:
-        page = "landing"
-
-    st.session_state.current_page = page
-    st.query_params["page"] = page
-    st.rerun()
-
-
-# ==========================================================
-# MAIN
+# MAIN APPLICATION
 # ==========================================================
 
 def main():
 
-    page = st.session_state.get(
-        "current_page",
-        "landing",
+    # ------------------------------------------------------
+    # IMPORTANT:
+    # URL query parameter is the single source of truth
+    # ------------------------------------------------------
+
+    page = st.query_params.get(
+        "page",
+        "landing"
     )
+
 
     # ======================================================
     # LANDING PAGE
@@ -202,6 +94,7 @@ def main():
 
         return
 
+
     # ======================================================
     # LOGIN PAGE
     # ======================================================
@@ -211,92 +104,90 @@ def main():
         (
             email,
             password,
-            login_clicked,
+            login_clicked
         ) = render_login_ui()
+
+
+        # --------------------------------------------------
+        # LOGIN BUTTON
+        # --------------------------------------------------
 
         if login_clicked:
 
-            cleaned_email = (
-                str(email)
-                .strip()
-                .lower()
-            )
+            cleaned_email = email.strip().lower()
 
-            registered_lower = [
-                str(user)
-                .strip()
-                .lower()
-                for user in st.session_state.registered_users
-            ]
 
-            if cleaned_email in registered_lower:
+            # ----------------------------------------------
+            # EMAIL VALIDATION
+            # ----------------------------------------------
 
-                user_name = (
-                    st.session_state
-                    .get(
-                        "registered_user_names",
-                        {},
-                    )
-                    .get(
-                        cleaned_email,
-                        "",
-                    )
-                )
-
-                if not user_name:
-
-                    email_name = (
-                        cleaned_email
-                        .split("@")[0]
-                    )
-
-                    user_name = (
-                        email_name
-                        .replace(".", " ")
-                        .replace("_", " ")
-                        .title()
-                    )
-
-                login_session(
-                    {
-                        "name": user_name,
-                        "email": cleaned_email,
-                    }
-                )
-
-                # Keep the user details explicitly available
-                # to the Career Analysis page.
-                st.session_state.current_user = {
-                    "name": user_name,
-                    "email": cleaned_email,
-                }
-
-                # Login goes directly to Career Analysis.
-                st.session_state.current_page = "dashboard"
-                st.query_params["page"] = "dashboard"
-                st.rerun()
-
-            else:
+            if not cleaned_email:
 
                 st.error(
-                    "⚠️ You are not registered yet! "
-                    "Please go register first."
+                    "Please enter your email address."
                 )
 
-        col1, col2, col3 = st.columns(
-            [1, 1.4, 1]
-        )
+                return
 
-        with col2:
 
-            if st.button(
-                "⬅ Back to Landing Page",
-                use_container_width=True,
-                key="login_back_landing",
-            ):
-                go_to_page("landing")
+            # ----------------------------------------------
+            # PASSWORD VALIDATION
+            # ----------------------------------------------
+
+            if not password:
+
+                st.error(
+                    "Please enter your password."
+                )
+
+                return
+
+
+            # ----------------------------------------------
+            # AUTHENTICATE USING SQLITE
+            # ----------------------------------------------
+
+            user = authenticate_user(
+                cleaned_email,
+                password
+            )
+
+
+            # ----------------------------------------------
+            # INVALID LOGIN
+            # ----------------------------------------------
+
+            if user is None:
+
+                st.error(
+                    "Invalid email or password."
+                )
+
+                return
+
+
+            # ----------------------------------------------
+            # CREATE LOGIN SESSION
+            # ----------------------------------------------
+
+            login_session(user)
+
+
+            # ----------------------------------------------
+            # GO TO CAREER ANALYSIS
+            # ----------------------------------------------
+
+            st.query_params.clear()
+
+            st.query_params["page"] = "dashboard"
+
+            st.rerun()
+
+            return
+
 
         return
+
 
     # ======================================================
     # REGISTER PAGE
@@ -309,25 +200,24 @@ def main():
             email,
             password,
             confirm_password,
-            register_clicked,
+            register_clicked
         ) = render_register_ui()
+
+
+        # --------------------------------------------------
+        # REGISTER BUTTON
+        # --------------------------------------------------
 
         if register_clicked:
 
-            cleaned_email = (
-                str(email)
-                .strip()
-                .lower()
-            )
+            cleaned_name = name.strip()
 
-            cleaned_name = str(name).strip()
+            cleaned_email = email.strip().lower()
 
-            registered_lower = [
-                str(user)
-                .strip()
-                .lower()
-                for user in st.session_state.registered_users
-            ]
+
+            # ----------------------------------------------
+            # NAME VALIDATION
+            # ----------------------------------------------
 
             if not cleaned_name:
 
@@ -335,90 +225,162 @@ def main():
                     "Please enter your full name."
                 )
 
-            elif not cleaned_email:
+                return
+
+
+            # ----------------------------------------------
+            # EMAIL VALIDATION
+            # ----------------------------------------------
+
+            if not cleaned_email:
 
                 st.error(
                     "Please enter your email address."
                 )
 
-            elif not password:
+                return
+
+
+            # ----------------------------------------------
+            # PASSWORD VALIDATION
+            # ----------------------------------------------
+
+            if not password:
 
                 st.error(
                     "Please enter a password."
                 )
 
-            elif password != confirm_password:
+                return
+
+
+            # ----------------------------------------------
+            # CONFIRM PASSWORD
+            # ----------------------------------------------
+
+            if not confirm_password:
 
                 st.error(
-                    "Passwords do not match!"
+                    "Please confirm your password."
                 )
 
-            elif cleaned_email in registered_lower:
+                return
 
-                st.warning(
-                    "Email already registered! "
-                    "Please log in."
+
+            # ----------------------------------------------
+            # PASSWORD MATCH
+            # ----------------------------------------------
+
+            if password != confirm_password:
+
+                st.error(
+                    "Passwords do not match."
                 )
 
-            else:
+                return
 
-                st.session_state.registered_users.append(
-                    cleaned_email
-                )
 
-                save_users(
-                    st.session_state.registered_users
-                )
+            # ----------------------------------------------
+            # REGISTER USER IN SQLITE
+            # ----------------------------------------------
 
-                st.session_state.registered_user_names[
-                    cleaned_email
-                ] = cleaned_name
+            success, message = register_user(
+                cleaned_name,
+                cleaned_email,
+                password
+            )
 
-                st.session_state.current_page = "login"
-                st.query_params["page"] = "login"
-                st.rerun()
 
-        col1, col2, col3 = st.columns(
-            [1, 1.4, 1]
-        )
+            # ----------------------------------------------
+            # REGISTRATION FAILED
+            # ----------------------------------------------
 
-        with col2:
+            if not success:
 
-            if st.button(
-                "⬅ Back to Landing Page",
-                use_container_width=True,
-                key="register_back_landing",
-            ):
-                go_to_page("landing")
+                st.error(message)
+
+                return
+
+
+            # ----------------------------------------------
+            # REGISTRATION SUCCESS
+            # ----------------------------------------------
+
+            st.success(message)
+
+
+            # ----------------------------------------------
+            # GO TO LOGIN PAGE
+            # ----------------------------------------------
+
+            st.query_params.clear()
+
+            st.query_params["page"] = "login"
+
+            st.rerun()
+
+            return
+
 
         return
 
+
     # ======================================================
-    # MY CAREER ANALYSIS
+    # MY CAREER ANALYSIS / DASHBOARD
     # ======================================================
 
     if page == "dashboard":
 
-        # Career Analysis is protected.
+        # --------------------------------------------------
+        # USER MUST BE LOGGED IN
+        # --------------------------------------------------
+
         if not is_logged_in():
 
-            st.session_state.current_page = "login"
+            st.query_params.clear()
+
             st.query_params["page"] = "login"
+
             st.rerun()
+
             return
 
-        # IMPORTANT:
-        # Call the function. Do not use:
-        #     if is_logged_in:
-        # because that only tests whether the function exists.
+
+        # --------------------------------------------------
+        # RENDER CAREER ANALYSIS
+        # --------------------------------------------------
+
         render_career_analysis()
+
         return
 
+
     # ======================================================
-    # FALLBACK
+    # LOGOUT
     # ======================================================
 
-    go_to_page("landing")
+    if page == "logout":
+
+        logout_session()
+
+        st.query_params.clear()
+
+        st.query_params["page"] = "landing"
+
+        st.rerun()
+
+        return
+
+
+    # ======================================================
+    # UNKNOWN PAGE
+    # ======================================================
+
+    st.query_params.clear()
+
+    st.query_params["page"] = "landing"
+
+    st.rerun()
 
 
 # ==========================================================
@@ -426,4 +388,5 @@ def main():
 # ==========================================================
 
 if __name__ == "__main__":
+
     main()
