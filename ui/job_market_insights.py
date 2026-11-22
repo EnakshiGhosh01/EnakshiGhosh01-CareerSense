@@ -1,1027 +1,483 @@
-import streamlit as st
 import pandas as pd
+import streamlit as st
+import altair as alt
 
 from analytics.market_insights import (
     load_market_data,
     prepare_market_data,
-    generate_market_insights,
+    filter_jobs,
+    calculate_total_jobs,
+    calculate_remote_percentage,
+    calculate_salary_range,
+    calculate_top_hiring_role,
+    calculate_salary_by_experience,
+    calculate_top_locations_by_salary,
+    calculate_top_skills,
+    calculate_industry_distribution,
+    calculate_top_roles_by_salary,
+    calculate_six_month_change,
+    calculate_remote_six_month_change,
 )
 
 
-# ==========================================================
-# PAGE STYLING
-# ==========================================================
-
-def render_market_styles():
-
-    st.markdown(
-        """
-        <style>
-
-        .market-header {
-            background: linear-gradient(
-                135deg,
-                #eef4ff 0%,
-                #f8fbff 100%
-            );
-            border: 1px solid #dbe7f7;
-            border-radius: 18px;
-            padding: 24px 28px;
-            margin-bottom: 20px;
-        }
-
-        .market-title {
-            color: #0b1f45;
-            font-size: 1.75rem;
-            font-weight: 800;
-            margin-bottom: 5px;
-        }
-
-        .market-subtitle {
-            color: #49617f;
-            font-size: 0.85rem;
-        }
-
-        .filter-box {
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: 16px;
-            padding: 18px 20px 8px 20px;
-            margin-bottom: 20px;
-        }
-
-        .section-title {
-            color: #0b1f45;
-            font-size: 1.15rem;
-            font-weight: 750;
-            margin-top: 20px;
-            margin-bottom: 12px;
-        }
-
-        .metric-card {
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: 16px;
-            padding: 18px;
-            min-height: 125px;
-            box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
-        }
-
-        .metric-label {
-            color: #64748b;
-            font-size: 0.78rem;
-            font-weight: 600;
-            margin-bottom: 8px;
-        }
-
-        .metric-value {
-            color: #0b1f45;
-            font-size: 1.35rem;
-            font-weight: 800;
-            line-height: 1.25;
-        }
-
-        .metric-description {
-            color: #64748b;
-            font-size: 0.70rem;
-            margin-top: 6px;
-        }
-
-        .chart-card {
-            background: #ffffff;
-            border: 1px solid #e2e8f0;
-            border-radius: 16px;
-            padding: 16px;
-            margin-bottom: 18px;
-        }
-
-        .chart-title {
-            color: #0b1f45;
-            font-size: 1rem;
-            font-weight: 750;
-            margin-bottom: 4px;
-        }
-
-        .chart-caption {
-            color: #64748b;
-            font-size: 0.72rem;
-            margin-bottom: 12px;
-        }
-
-        </style>
-        """,
-        unsafe_allow_html=True
-    )
+# ============================================================
+# DATA
+# ============================================================
 
 
-# ==========================================================
-# HELPER FUNCTIONS
-# ==========================================================
+@st.cache_data(show_spinner="Loading job-market dataset...")
+def get_market_dataset():
+    return prepare_market_data(load_market_data())
 
-def safe_text(value, fallback="Not available"):
 
+def safe_value(value, fallback="Not available"):
     if value is None:
         return fallback
-
-    text = str(value).strip()
-
-    if not text:
-        return fallback
-
-    if text.lower() in {
-        "nan",
-        "none",
-        "null"
-    }:
-        return fallback
-
-    return text
-
-
-def format_lpa(value):
-
-    if value is None:
-        return "Not available"
-
     try:
-        value = float(value)
-    except (
-        TypeError,
-        ValueError
-    ):
-        return "Not available"
-
-    return f"₹{value:.1f} LPA"
+        if pd.isna(value):
+            return fallback
+    except (TypeError, ValueError):
+        pass
+    value = str(value).strip()
+    return value if value and value.lower() not in {"nan", "none", "null"} else fallback
 
 
-def format_salary_range_from_values(
-    minimum_salary,
-    maximum_salary
-):
+def salary_display(salary_range):
+    if not isinstance(salary_range, dict):
+        return "Not disclosed"
+    return safe_value(salary_range.get("display"), "Not disclosed")
 
-    if (
-        minimum_salary is None
-        or pd.isna(minimum_salary)
-    ):
 
-        if (
-            maximum_salary is None
-            or pd.isna(maximum_salary)
-        ):
-            return "Not disclosed"
+def make_salary_range_chart(data, category_column, title_column=None, height=300):
+    """Render salary minimum-to-maximum ranges as horizontal interval bars."""
+    if data is None or data.empty:
+        st.info("There is not enough disclosed salary data for this comparison.")
+        return
 
-        return f"Up to ₹{float(maximum_salary):.1f} LPA"
+    chart_data = data.copy()
+    chart_data["Minimum Salary"] = pd.to_numeric(
+        chart_data["Minimum Salary"], errors="coerce"
+    )
+    chart_data["Maximum Salary"] = pd.to_numeric(
+        chart_data["Maximum Salary"], errors="coerce"
+    )
+    chart_data = chart_data.dropna(
+        subset=["Minimum Salary", "Maximum Salary"], how="all"
+    )
+    chart_data["Minimum Salary"] = chart_data["Minimum Salary"].fillna(
+        chart_data["Maximum Salary"]
+    )
+    chart_data["Maximum Salary"] = chart_data["Maximum Salary"].fillna(
+        chart_data["Minimum Salary"]
+    )
+    chart_data = chart_data[
+        chart_data["Maximum Salary"] >= chart_data["Minimum Salary"]
+    ]
 
-    if (
-        maximum_salary is None
-        or pd.isna(maximum_salary)
-    ):
+    if chart_data.empty:
+        st.info("There is not enough valid salary information to draw this chart.")
+        return
 
-        return f"From ₹{float(minimum_salary):.1f} LPA"
-
-    minimum_salary = float(
-        minimum_salary
+    chart_data["Salary Range"] = (
+        "₹" + chart_data["Minimum Salary"].round(1).astype(str)
+        + " – ₹" + chart_data["Maximum Salary"].round(1).astype(str) + " LPA"
     )
 
-    maximum_salary = float(
-        maximum_salary
-    )
-
-    if minimum_salary > maximum_salary:
-
-        minimum_salary, maximum_salary = (
-            maximum_salary,
-            minimum_salary
+    chart = (
+        alt.Chart(chart_data)
+        .mark_bar(size=18, cornerRadius=4, color="#3978E8")
+        .encode(
+            y=alt.Y(
+                f"{category_column}:N",
+                sort="-x",
+                title=None,
+                axis=alt.Axis(labelLimit=180),
+            ),
+            x=alt.X(
+                "Minimum Salary:Q",
+                title="Salary (LPA)",
+                scale=alt.Scale(zero=True),
+            ),
+            x2=alt.X2("Maximum Salary:Q"),
+            tooltip=[
+                alt.Tooltip(f"{category_column}:N", title=title_column or category_column),
+                alt.Tooltip("Minimum Salary:Q", format=".1f", title="Minimum (LPA)"),
+                alt.Tooltip("Maximum Salary:Q", format=".1f", title="Maximum (LPA)"),
+                alt.Tooltip("Salary Range:N"),
+            ],
         )
-
-    return (
-        f"₹{minimum_salary:.1f} – "
-        f"₹{maximum_salary:.1f} LPA"
+        .properties(height=height)
     )
+    st.altair_chart(chart, use_container_width=True)
 
 
-# ==========================================================
-# FILTER INPUTS
-# ==========================================================
+def render_metric_card(label, value, help_text):
+    # Native Streamlit card: no HTML strings are used.
+    with st.container(border=True):
+        st.caption(label)
+        st.markdown(f"### {value}")
+        st.caption(help_text)
+
+
+# ============================================================
+# FILTERS
+# ============================================================
+
 
 def render_filters(jobs):
-
-    st.markdown(
-        '<div class="filter-box">',
-        unsafe_allow_html=True
-    )
-
-    st.markdown(
-        "### 🔎 Explore Job Market",
-    )
-
+    """
+    Collect filters and only generate dashboard results after Apply Filters.
+    Dropdown choices come from the dataset to avoid invalid free-text filters.
+    """
+    st.subheader("🔎 Explore Job Market")
     st.caption(
-        "Filter the job market by role, location and experience level."
+        "Choose a role, location and experience level, then apply filters "
+        "to generate the market insights."
     )
 
-    col1, col2, col3, col4 = st.columns(
-        [2.4, 2.0, 1.5, 1.0]
+    role_counts = (
+        jobs["title"]
+        .dropna()
+        .astype(str)
+        .str.strip()
+        .replace("", pd.NA)
+        .dropna()
+        .value_counts()
     )
+    role_options = role_counts.head(250).index.tolist()
 
-    # ------------------------------------------------------
-    # Job Role
-    # ------------------------------------------------------
-
-    with col1:
-
-        job_role = st.text_input(
-            "Job Role",
-            placeholder="e.g. Data Scientist",
-            key="market_job_role"
-        )
-
-    # ------------------------------------------------------
-    # Location
-    # ------------------------------------------------------
-
-    with col2:
-
-        location = st.text_input(
-            "Location",
-            placeholder="e.g. Bengaluru",
-            key="market_location"
-        )
-
-    # ------------------------------------------------------
-    # Experience
-    # ------------------------------------------------------
-
-    with col3:
-
-        experience_level = st.selectbox(
-            "Experience Level",
-            options=[
-                "All",
-                "0-1",
-                "1-3",
-                "3-5",
-                "5-7",
-                "7+"
-            ],
-            key="market_experience"
-        )
-
-    # ------------------------------------------------------
-    # Apply
-    # ------------------------------------------------------
-
-    with col4:
-
-        st.write("")
-
-        apply_filters = st.button(
-            "Apply Filters",
-            type="primary",
-            use_container_width=True,
-            key="apply_market_filters"
-        )
-
-    st.markdown(
-        "</div>",
-        unsafe_allow_html=True
+    location_counts = (
+        jobs["location"]
+        .dropna()
+        .astype(str)
+        .str.strip()
+        .replace("", pd.NA)
+        .dropna()
+        .value_counts()
     )
+    location_options = location_counts.head(150).index.tolist()
 
-    # ------------------------------------------------------
-    # Store filters
-    # ------------------------------------------------------
-
-    if "market_filters_applied" not in st.session_state:
-
-        st.session_state.market_filters_applied = {
+    if "market_filters_native" not in st.session_state:
+        st.session_state.market_filters_native = {
             "job_role": None,
             "location": None,
-            "experience_level": "All"
+            "experience_level": "All",
         }
 
-    if apply_filters:
+    if "market_filters_submitted" not in st.session_state:
+        st.session_state.market_filters_submitted = False
 
-        st.session_state.market_filters_applied = {
-            "job_role": job_role.strip()
-            if job_role.strip()
-            else None,
-
-            "location": location.strip()
-            if location.strip()
-            else None,
-
-            "experience_level": experience_level
-        }
-
-    return st.session_state.market_filters_applied
-
-
-# ==========================================================
-# SUMMARY CARD
-# ==========================================================
-
-def render_metric_card(
-    label,
-    value,
-    description=""
-):
-
-    st.markdown(
-        f"""
-        <div class="metric-card">
-
-            <div class="metric-label">
-                {label}
-            </div>
-
-            <div class="metric-value">
-                {value}
-            </div>
-
-            <div class="metric-description">
-                {description}
-            </div>
-
-        </div>
-        """,
-        unsafe_allow_html=True
+    saved = st.session_state.market_filters_native
+    saved_role = saved.get("job_role") or "All Roles"
+    saved_location = saved.get("location") or "All Locations"
+    saved_experience = saved.get("experience_level", "All")
+    saved_experience = (
+        "All Levels" if saved_experience == "All" else saved_experience
     )
 
+    role_choices = ["All Roles"] + role_options
+    location_choices = ["All Locations"] + location_options
+    experience_choices = ["All Levels", "0-1", "1-3", "3-5", "5-7", "7+"]
 
-# ==========================================================
-# SUMMARY METRICS
-# ==========================================================
+    if saved_role not in role_choices:
+        saved_role = "All Roles"
+    if saved_location not in location_choices:
+        saved_location = "All Locations"
+    if saved_experience not in experience_choices:
+        saved_experience = "All Levels"
 
-def render_summary_cards(insights):
+    with st.form("market_insights_filter_form", clear_on_submit=False):
+        col1, col2, col3, col4 = st.columns([2.3, 2.0, 1.5, 1.0])
 
-    total_jobs = insights[
-        "total_jobs"
-    ]
+        with col1:
+            role_input = st.selectbox(
+                "Job Role",
+                role_choices,
+                index=role_choices.index(saved_role),
+                help="Choose a role available in the dataset.",
+            )
 
-    remote_percentage = insights[
-        "remote_percentage"
-    ]
+        with col2:
+            location_input = st.selectbox(
+                "Location",
+                location_choices,
+                index=location_choices.index(saved_location),
+                help="Choose a location available in the dataset.",
+            )
 
-    salary_range = insights[
-        "salary_range"
-    ]
+        with col3:
+            experience_input = st.selectbox(
+                "Experience Level",
+                experience_choices,
+                index=experience_choices.index(saved_experience),
+            )
 
-    top_role = insights[
-        "top_hiring_role"
-    ]
+        with col4:
+            st.write("")
+            submitted = st.form_submit_button(
+                "Apply Filters", type="primary", use_container_width=True
+            )
 
-    col1, col2, col3, col4 = st.columns(4)
-
-    # ------------------------------------------------------
-    # Total jobs
-    # ------------------------------------------------------
-
-    with col1:
-
-        render_metric_card(
-            "Total Job Postings",
-            f"{total_jobs:,}",
-            "Matching postings in the selected market"
-        )
-
-    # ------------------------------------------------------
-    # Remote jobs
-    # ------------------------------------------------------
-
-    with col2:
-
-        render_metric_card(
-            "Remote Jobs",
-            f"{remote_percentage:.1f}%",
-            "Share of postings marked as remote"
-        )
-
-    # ------------------------------------------------------
-    # Salary range
-    # ------------------------------------------------------
-
-    with col3:
-
-        render_metric_card(
-            "Salary Range",
-            salary_range["display"],
-            "Range from disclosed salary postings"
-        )
-
-    # ------------------------------------------------------
-    # Top hiring role
-    # ------------------------------------------------------
-
-    with col4:
-
-        render_metric_card(
-            "Top Hiring Role",
-            safe_text(
-                top_role,
-                "Not available"
+    if submitted:
+        st.session_state.market_filters_native = {
+            "job_role": None if role_input == "All Roles" else role_input,
+            "location": (
+                None if location_input == "All Locations" else location_input
             ),
-            "Most frequently posted job title"
-        )
-
-
-# ==========================================================
-# SALARY BY EXPERIENCE
-# ==========================================================
-
-def render_salary_by_experience(
-    salary_df
-):
-
-    st.markdown(
-        '<div class="section-title">'
-        '💰 Salary Range by Experience'
-        '</div>',
-        unsafe_allow_html=True
-    )
-
-    if salary_df.empty:
-
-        st.info(
-            "Salary information is not available "
-            "for the selected filters."
-        )
-
-        return
-
-    chart_df = salary_df[
-        [
-            "Experience",
-            "Minimum Salary",
-            "Maximum Salary"
-        ]
-    ].copy()
-
-    chart_df = chart_df.set_index(
-        "Experience"
-    )
-
-    chart_df = chart_df.rename(
-        columns={
-            "Minimum Salary": "Minimum",
-            "Maximum Salary": "Maximum"
+            "experience_level": (
+                "All" if experience_input == "All Levels" else experience_input
+            ),
         }
-    )
+        st.session_state.market_filters_submitted = True
 
-    st.line_chart(
-        chart_df,
-        use_container_width=True
-    )
-
-    st.caption(
-        "Salary values are shown in LPA. "
-        "Minimum and maximum represent the disclosed "
-        "salary boundaries available in the dataset."
-    )
-
-    display_df = salary_df[
-        [
-            "Experience",
-            "Salary Range"
-        ]
-    ].copy()
-
-    st.dataframe(
-        display_df,
-        use_container_width=True,
-        hide_index=True
+    return (
+        st.session_state.market_filters_native,
+        st.session_state.market_filters_submitted,
     )
 
 
-# ==========================================================
-# TOP LOCATIONS BY SALARY
-# ==========================================================
+def render_active_filters(filters):
+    active = []
+    if filters.get("job_role"):
+        active.append(f"Role: {filters['job_role']}")
+    if filters.get("location"):
+        active.append(f"Location: {filters['location']}")
+    if filters.get("experience_level") != "All":
+        active.append(f"Experience: {filters['experience_level']} years")
 
-def render_top_locations(
-    locations_df
-):
-
-    st.markdown(
-        '<div class="section-title">'
-        '📍 Top Locations by Salary Range'
-        '</div>',
-        unsafe_allow_html=True
-    )
-
-    if locations_df.empty:
-
-        st.info(
-            "There is not enough disclosed salary data "
-            "for location analysis."
-        )
-
-        return
-
-    chart_df = locations_df[
-        [
-            "Location",
-            "Minimum Salary",
-            "Maximum Salary"
-        ]
-    ].copy()
-
-    chart_df = chart_df.set_index(
-        "Location"
-    )
-
-    chart_df = chart_df.rename(
-        columns={
-            "Minimum Salary": "Minimum",
-            "Maximum Salary": "Maximum"
-        }
-    )
-
-    st.bar_chart(
-        chart_df,
-        use_container_width=True
-    )
-
-    display_df = locations_df[
-        [
-            "Location",
-            "Salary Range",
-            "Job Count"
-        ]
-    ].copy()
-
-    st.dataframe(
-        display_df,
-        use_container_width=True,
-        hide_index=True
-    )
+    if active:
+        st.caption("Active filters: " + "  •  ".join(active))
+    else:
+        st.caption("Showing all available job postings")
 
 
-# ==========================================================
-# TOP SKILLS
-# ==========================================================
-
-def render_top_skills(
-    skills_df
-):
-
-    st.markdown(
-        '<div class="section-title">'
-        '🛠️ Top In-Demand Skills'
-        '</div>',
-        unsafe_allow_html=True
-    )
-
-    if skills_df.empty:
-
-        st.info(
-            "No skill-demand information is available."
-        )
-
-        return
-
-    chart_df = skills_df[
-        [
-            "Skill",
-            "Demand"
-        ]
-    ].copy()
-
-    chart_df = chart_df.set_index(
-        "Skill"
-    )
-
-    st.bar_chart(
-        chart_df,
-        use_container_width=True
-    )
-
-    st.caption(
-        "Demand represents the number of job postings "
-        "containing the skill in the dataset."
-    )
+# ============================================================
+# SUMMARY CARDS
+# ============================================================
 
 
-# ==========================================================
-# INDUSTRY DISTRIBUTION
-# ==========================================================
+def render_summary_cards(jobs):
+    total_jobs = calculate_total_jobs(jobs)
+    remote_pct = calculate_remote_percentage(jobs)
+    salary_range = calculate_salary_range(jobs)
+    top_role = calculate_top_hiring_role(jobs)
 
-def render_industry_distribution(
-    industry_df
-):
-
-    st.markdown(
-        '<div class="section-title">'
-        '🏢 Job Distribution by Industry'
-        '</div>',
-        unsafe_allow_html=True
-    )
-
-    if industry_df.empty:
-
-        st.info(
-            "Industry information is not available."
-        )
-
-        return
-
-    chart_df = industry_df[
-        [
-            "Industry",
-            "Jobs"
-        ]
-    ].copy()
-
-    chart_df = chart_df.set_index(
-        "Industry"
-    )
-
-    st.bar_chart(
-        chart_df,
-        use_container_width=True
-    )
-
-    st.caption(
-        "Industry is derived from job titles, descriptions "
-        "and skills because the source dataset does not "
-        "contain an explicit industry column."
-    )
-
-
-# ==========================================================
-# TOP ROLES BY SALARY
-# ==========================================================
-
-def render_top_roles_by_salary(
-    roles_df
-):
-
-    st.markdown(
-        '<div class="section-title">'
-        '💼 Top Job Roles by Salary Range'
-        '</div>',
-        unsafe_allow_html=True
-    )
-
-    if roles_df.empty:
-
-        st.info(
-            "There is not enough salary data "
-            "for role-level analysis."
-        )
-
-        return
-
-    chart_df = roles_df[
-        [
-            "Job Role",
-            "Minimum Salary",
-            "Maximum Salary"
-        ]
-    ].copy()
-
-    chart_df = chart_df.set_index(
-        "Job Role"
-    )
-
-    chart_df = chart_df.rename(
-        columns={
-            "Minimum Salary": "Minimum",
-            "Maximum Salary": "Maximum"
-        }
-    )
-
-    st.bar_chart(
-        chart_df,
-        use_container_width=True
-    )
-
-    display_df = roles_df[
-        [
-            "Job Role",
-            "Salary Range",
-            "Job Count"
-        ]
-    ].copy()
-
-    st.dataframe(
-        display_df,
-        use_container_width=True,
-        hide_index=True
-    )
-
-
-# ==========================================================
-# MARKET CHANGE
-# ==========================================================
-
-def render_market_changes(
-    insights
-):
-
-    job_change = insights[
-        "six_month_job_change"
+    cols = st.columns(4, gap="medium")
+    metrics = [
+        ("💼 Total Job Postings", f"{total_jobs:,}", "Matching job postings"),
+        ("🏠 Remote Jobs", f"{remote_pct:.1f}%", "Share marked as remote"),
+        ("💰 Salary Range", salary_display(salary_range), "Disclosed salary boundaries"),
+        ("🏆 Top Hiring Role", safe_value(top_role), "Most frequently posted title"),
     ]
 
-    remote_change = insights[
-        "six_month_remote_change"
-    ]
+    for col, (label, value, help_text) in zip(cols, metrics):
+        with col:
+            render_metric_card(label, value, help_text)
 
-    # ------------------------------------------------------
-    # No historical data
-    # ------------------------------------------------------
 
-    if (
-        job_change is None
-        and remote_change is None
-    ):
+# ============================================================
+# CHARTS
+# ============================================================
 
+
+def render_salary_by_experience(data):
+    st.markdown("#### 💰 Salary Range by Experience")
+    if data is None or data.empty:
+        st.info("Salary information is not available for these filters.")
+        return
+    make_salary_range_chart(data, "Experience", height=260)
+
+
+def render_top_locations(data):
+    st.markdown("#### 📍 Top Locations by Salary Range")
+    if data is None or data.empty:
+        st.info("There is not enough disclosed salary data across locations.")
+        return
+    make_salary_range_chart(data, "Location", height=260)
+
+
+def render_top_skills(data):
+    st.markdown("#### 🛠️ Top In-Demand Skills")
+    if data is None or data.empty:
+        st.info("No skill-demand information is available for these filters.")
         return
 
-    st.markdown(
-        '<div class="section-title">'
-        '📈 Market Changes'
-        '</div>',
-        unsafe_allow_html=True
+    chart_data = data.copy()
+    chart_data["Demand"] = pd.to_numeric(chart_data["Demand"], errors="coerce")
+    chart_data = chart_data.dropna(subset=["Demand"]).nlargest(10, "Demand")
+    if chart_data.empty:
+        st.info("No valid skill counts are available.")
+        return
+
+    chart = (
+        alt.Chart(chart_data)
+        .mark_bar(color="#2878D0", cornerRadiusEnd=4)
+        .encode(
+            x=alt.X("Demand:Q", title="Number of job postings"),
+            y=alt.Y("Skill:N", sort="-x", title=None, axis=alt.Axis(labelLimit=150)),
+            tooltip=["Skill", alt.Tooltip("Demand:Q", format=",")],
+        )
+        .properties(height=300)
+    )
+    st.altair_chart(chart, use_container_width=True)
+    st.caption("Demand represents the number of postings containing each skill.")
+
+
+def render_industry_distribution(data):
+    st.markdown("#### 🏢 Job Distribution by Industry")
+    if data is None or data.empty:
+        st.info("Industry information is not available for these filters.")
+        return
+
+    chart_data = data.copy()
+    chart_data["Jobs"] = pd.to_numeric(chart_data["Jobs"], errors="coerce")
+    chart_data = chart_data.dropna(subset=["Jobs"])
+    if chart_data.empty:
+        st.info("No valid industry counts are available.")
+        return
+
+    chart = (
+        alt.Chart(chart_data)
+        .mark_arc(innerRadius=65, outerRadius=115)
+        .encode(
+            theta=alt.Theta("Jobs:Q", stack=True),
+            color=alt.Color("Industry:N", title="Industry"),
+            tooltip=["Industry", alt.Tooltip("Jobs:Q", format=",")],
+        )
+        .properties(height=300)
+    )
+    st.altair_chart(chart, use_container_width=True)
+    st.caption(
+        "Industry categories are inferred from job titles, descriptions and skills; "
+        "the source dataset has no explicit industry column."
     )
 
+
+def render_top_roles(data):
+    st.markdown("#### 💼 Top Job Roles by Salary Range")
+    if data is None or data.empty:
+        st.info("There is not enough disclosed salary data for role-level comparison.")
+        return
+    make_salary_range_chart(data, "Job Role", height=300)
+
+
+def render_market_changes(jobs):
+    job_change = calculate_six_month_change(jobs)
+    remote_change = calculate_remote_six_month_change(jobs)
+    if job_change is None and remote_change is None:
+        return
+
+    st.divider()
+    st.markdown("#### 📈 Market Changes")
     col1, col2 = st.columns(2)
-
-    # ------------------------------------------------------
-    # Job posting change
-    # ------------------------------------------------------
-
     with col1:
-
         if job_change is None:
-
-            st.info(
-                "Six-month job-posting comparison "
-                "is not available."
-            )
-
+            st.caption("Six-month job-posting comparison is not available.")
         else:
-
-            st.metric(
-                "Six-Month Job Posting Change",
-                f"{job_change:+.1f}%"
-            )
-
-    # ------------------------------------------------------
-    # Remote change
-    # ------------------------------------------------------
-
+            st.metric("Six-Month Job Posting Change", f"{job_change:+.1f}%")
     with col2:
-
         if remote_change is None:
-
-            st.info(
-                "Six-month remote-job comparison "
-                "is not available."
-            )
-
+            st.caption("Six-month remote-job comparison is not available.")
         else:
-
-            st.metric(
-                "Six-Month Remote Share Change",
-                f"{remote_change:+.1f} percentage points"
-            )
+            st.metric("Six-Month Remote Share Change", f"{remote_change:+.1f} percentage points")
 
 
-# ==========================================================
-# MAIN RENDER FUNCTION
-# ==========================================================
-
-@st.cache_data
-def get_market_dataset():
-
-    jobs = load_market_data()
-
-    return prepare_market_data(
-        jobs
-    )
+# ============================================================
+# MAIN PAGE
+# ============================================================
 
 
 def render_job_market_insights():
-
-    render_market_styles()
-
-    # ======================================================
-    # HEADER
-    # ======================================================
-
-    st.markdown(
-        """
-        <div class="market-header">
-
-            <div class="market-title">
-                Job Market Insights
-            </div>
-
-            <div class="market-subtitle">
-                Explore current job-market demand,
-                salary ranges, skills, locations,
-                experience levels and industries.
-            </div>
-
-        </div>
-        """,
-        unsafe_allow_html=True
-    )
-
-    # ======================================================
-    # LOAD DATA
-    # ======================================================
-
-    try:
-
-        jobs = get_market_dataset()
-
-    except FileNotFoundError as error:
-
-        st.error(
-            str(error)
-        )
-
-        return
-
-    except Exception as error:
-
-        st.error(
-            "Unable to load the job-market dataset."
-        )
-
-        st.exception(error)
-
-        return
-
-    # ======================================================
-    # FILTERS
-    # ======================================================
-
-    filters = render_filters(
-        jobs
-    )
-
-    # ======================================================
-    # GENERATE INSIGHTS
-    # ======================================================
-
-    try:
-
-        insights = generate_market_insights(
-            jobs,
-            job_role=filters["job_role"],
-            location=filters["location"],
-            experience_level=filters[
-                "experience_level"
-            ]
-        )
-
-    except Exception as error:
-
-        st.error(
-            "Unable to calculate market insights."
-        )
-
-        st.exception(error)
-
-        return
-
-    # ======================================================
-    # FILTER STATUS
-    # ======================================================
-
-    active_filters = []
-
-    if filters["job_role"]:
-
-        active_filters.append(
-            f"Role: {filters['job_role']}"
-        )
-
-    if filters["location"]:
-
-        active_filters.append(
-            f"Location: {filters['location']}"
-        )
-
-    if (
-        filters["experience_level"]
-        != "All"
-    ):
-
-        active_filters.append(
-            "Experience: "
-            + filters["experience_level"]
-        )
-
-    if active_filters:
-
-        st.caption(
-            "Active filters: "
-            + " • ".join(active_filters)
-        )
-
-    # ======================================================
-    # NO RESULTS
-    # ======================================================
-
-    if insights["total_jobs"] == 0:
-
-        st.warning(
-            "No job postings match the selected filters. "
-            "Try a broader role or location."
-        )
-
-        return
-
-    # ======================================================
-    # SUMMARY
-    # ======================================================
-
-    render_summary_cards(
-        insights
-    )
-
-    st.divider()
-
-    # ======================================================
-    # FIRST ROW
-    # ======================================================
-
-    col1, col2 = st.columns(
-        2,
-        gap="large"
-    )
-
-    with col1:
-
-        render_salary_by_experience(
-            insights[
-                "salary_by_experience"
-            ]
-        )
-
-    with col2:
-
-        render_top_locations(
-            insights[
-                "top_locations_by_salary"
-            ]
-        )
-
-    # ======================================================
-    # SECOND ROW
-    # ======================================================
-
-    col3, col4 = st.columns(
-        2,
-        gap="large"
-    )
-
-    with col3:
-
-        render_top_skills(
-            insights[
-                "top_skills"
-            ]
-        )
-
-    with col4:
-
-        render_industry_distribution(
-            insights[
-                "industry_distribution"
-            ]
-        )
-
-    # ======================================================
-    # THIRD ROW
-    # ======================================================
-
-    render_top_roles_by_salary(
-        insights[
-            "top_roles_by_salary"
-        ]
-    )
-
-    # ======================================================
-    # MARKET CHANGE
-    # ======================================================
-
-    render_market_changes(
-        insights
-    )
-
-    # ======================================================
-    # DATA NOTE
-    # ======================================================
-
-    st.divider()
-
+    st.title("📊 Job Market Insights")
     st.caption(
-        "Salary analytics use disclosed salary information "
-        "from the processed job dataset. "
-        "Salary ranges are displayed instead of a single "
-        "fixed salary value. "
-        "Industry categories are derived because the source "
-        "dataset does not contain an explicit industry field."
+        "Explore job demand, salary ranges, in-demand skills, locations, "
+        "experience levels and industry distribution."
+    )
+
+    try:
+        jobs = get_market_dataset()
+    except FileNotFoundError as error:
+        st.error(str(error))
+        return
+    except Exception as error:
+        st.error("Unable to load the job-market dataset.")
+        st.exception(error)
+        return
+
+    if jobs.empty:
+        st.warning("The processed job-market dataset contains no postings.")
+        return
+
+    filters, filters_submitted = render_filters(jobs)
+
+    # Do not display previous or unfiltered results before the user
+    # explicitly submits the filter form.
+    if not filters_submitted:
+        st.info("Select your filters and click **Apply Filters** to generate job-market insights.")
+        return
+
+    render_active_filters(filters)
+
+    role = filters.get("job_role")
+    location = filters.get("location")
+    experience = filters.get("experience_level", "All")
+
+    # KPI cards follow every active filter.
+    kpi_jobs = filter_jobs(
+        jobs, job_role=role, location=location, experience_level=experience
+    )
+
+    if kpi_jobs.empty:
+        st.warning(
+            "No job postings match the selected filters. Clear one or more filters "
+            "or try a broader search."
+        )
+        return
+
+    # Chart datasets intentionally relax only the filter that would make
+    # that comparison meaningless (e.g. location comparison ignores location).
+    experience_jobs = filter_jobs(
+        jobs, job_role=role, location=location, experience_level="All"
+    )
+    location_jobs = filter_jobs(
+        jobs, job_role=role, location=None, experience_level=experience
+    )
+    skills_industry_jobs = filter_jobs(
+        jobs, job_role=role, location=location, experience_level="All"
+    )
+    role_jobs = filter_jobs(
+        jobs, job_role=None, location=location, experience_level=experience
+    )
+
+    render_summary_cards(kpi_jobs)
+    st.divider()
+
+    row1_left, row1_right = st.columns(2, gap="large")
+    with row1_left:
+        render_salary_by_experience(
+            calculate_salary_by_experience(experience_jobs)
+        )
+    with row1_right:
+        render_top_locations(
+            calculate_top_locations_by_salary(location_jobs, top_n=5)
+        )
+
+    row2_left, row2_right = st.columns(2, gap="large")
+    with row2_left:
+        render_top_skills(calculate_top_skills(skills_industry_jobs, top_n=10))
+    with row2_right:
+        render_industry_distribution(
+            calculate_industry_distribution(skills_industry_jobs)
+        )
+
+    render_top_roles(
+        calculate_top_roles_by_salary(role_jobs, top_n=6)
+    )
+    render_market_changes(experience_jobs)
+
+    st.divider()
+    st.caption(
+        "Salary analysis uses disclosed salary information from the processed dataset. "
+        "Salary ranges are shown instead of a single fixed salary value. Industry "
+        "categories are inferred because the source dataset has no explicit industry field."
     )
