@@ -158,129 +158,109 @@ def filter_jobs(
     experience_level=None
 ):
     """
-    Filter jobs according to the selected dashboard filters.
-    """
+    Filter postings using values selected from the dataset.
 
+    The dashboard's display labels (All Roles, All Locations,
+    All Levels) are treated as no filter.
+    """
     filtered = jobs.copy()
 
-    # ------------------------------------------------------
-    # Job Role
-    # ------------------------------------------------------
+    # Normalize dashboard sentinel labels.
+    role_value = str(job_role).strip() if job_role is not None else ""
+    location_value = str(location).strip() if location is not None else ""
+    experience_value = (
+        str(experience_level).strip()
+        if experience_level is not None
+        else ""
+    )
 
-    if (
-        job_role
-        and job_role != "All"
-    ):
+    if role_value.casefold() in {
+        "", "none", "all", "all roles", "all jobs", "any role"
+    }:
+        role_value = None
 
-        role_pattern = re.escape(
-            str(job_role)
+    if location_value.casefold() in {
+        "", "none", "all", "all locations", "any location"
+    }:
+        location_value = None
+
+    if experience_value.casefold() in {
+        "", "none", "all", "all levels", "any"
+    }:
+        experience_value = None
+
+    # Job role: literal, case-insensitive matching.
+    if role_value:
+        title_text = (
+            filtered["title"]
+            .fillna("")
+            .astype(str)
+            .str.strip()
         )
-
-        title_match = filtered["title"].astype(
-            str
-        ).str.contains(
-            role_pattern,
-            case=False,
-            na=False
-        )
-
         filtered = filtered[
-            title_match
+            title_text.str.contains(
+                role_value,
+                case=False,
+                regex=False,
+                na=False
+            )
         ]
 
-    # ------------------------------------------------------
-    # Location
-    # ------------------------------------------------------
-
-    if (
-        location
-        and location != "All"
-    ):
-
-        location_pattern = re.escape(
-            str(location)
+    # Location: literal, case-insensitive matching.
+    if location_value:
+        location_text = (
+            filtered["location"]
+            .fillna("")
+            .astype(str)
+            .str.strip()
         )
-
-        location_match = filtered["location"].astype(
-            str
-        ).str.contains(
-            location_pattern,
-            case=False,
-            na=False
-        )
-
         filtered = filtered[
-            location_match
+            location_text.str.contains(
+                location_value,
+                case=False,
+                regex=False,
+                na=False
+            )
         ]
 
-    # ------------------------------------------------------
-    # Experience Level
-    # ------------------------------------------------------
+    # Experience ranges are matched by interval overlap.
+    if experience_value:
+        experience_ranges = {
+            "0-1": (0, 1),
+            "1-3": (1, 3),
+            "3-5": (3, 5),
+            "5-7": (5, 7),
+            "7+": (7, float("inf")),
+        }
 
-    if (
-        experience_level
-        and experience_level != "All"
-    ):
+        if experience_value in experience_ranges:
+            lower, upper = experience_ranges[experience_value]
 
-        if experience_level == "0-1":
+            min_exp = pd.to_numeric(
+                filtered["minimumExperience"], errors="coerce"
+            )
+            max_exp = pd.to_numeric(
+                filtered["maximumExperience"], errors="coerce"
+            )
 
-            filtered = filtered[
-                (
-                    filtered["minimumExperience"]
-                    <= 1
+            # Use the known boundary when one side is missing.
+            # Rows with neither boundary are not treated as matching
+            # every experience band.
+            overlaps = (
+                min_exp.notna()
+                & (min_exp <= upper)
+                & (
+                    max_exp.isna()
+                    | (max_exp >= lower)
                 )
-                |
-                filtered["minimumExperience"].isna()
-            ]
+            ) | (
+                min_exp.isna()
+                & max_exp.notna()
+                & (max_exp >= lower)
+                & (max_exp <= upper)
+            )
 
-        elif experience_level == "1-3":
-
-            filtered = filtered[
-                (
-                    filtered["maximumExperience"]
-                    >= 1
-                )
-                &
-                (
-                    filtered["minimumExperience"]
-                    <= 3
-                )
-            ]
-
-        elif experience_level == "3-5":
-
-            filtered = filtered[
-                (
-                    filtered["maximumExperience"]
-                    >= 3
-                )
-                &
-                (
-                    filtered["minimumExperience"]
-                    <= 5
-                )
-            ]
-
-        elif experience_level == "5-7":
-
-            filtered = filtered[
-                (
-                    filtered["maximumExperience"]
-                    >= 5
-                )
-                &
-                (
-                    filtered["minimumExperience"]
-                    <= 7
-                )
-            ]
-
-        elif experience_level == "7+":
-
-            filtered = filtered[
-                filtered["maximumExperience"]
-                >= 7
-            ]
+            filtered = filtered[overlaps]
 
     return filtered
 
@@ -1294,13 +1274,14 @@ def generate_market_insights(
     experience_level=None
 ):
     """
-    Generate all market insights for the dashboard.
+    Generate filtered KPI metrics and comparison datasets.
+
+    KPI values use all selected filters. Comparison charts relax the
+    dimension being compared so that the charts remain meaningful.
     """
+    prepared_jobs = prepare_market_data(jobs)
 
-    prepared_jobs = prepare_market_data(
-        jobs
-    )
-
+    # All selected filters: used by the KPI cards.
     filtered_jobs = filter_jobs(
         prepared_jobs,
         job_role=job_role,
@@ -1308,53 +1289,61 @@ def generate_market_insights(
         experience_level=experience_level
     )
 
-    salary_range = calculate_salary_range(
-        filtered_jobs
+    # Salary by experience: keep role/location, relax experience.
+    experience_jobs = filter_jobs(
+        prepared_jobs,
+        job_role=job_role,
+        location=location,
+        experience_level=None
+    )
+
+    # Locations comparison: keep role/experience, relax location.
+    location_jobs = filter_jobs(
+        prepared_jobs,
+        job_role=job_role,
+        location=None,
+        experience_level=experience_level
+    )
+
+    # Skills and industry: keep role/location, relax experience.
+    skills_industry_jobs = experience_jobs
+
+    # Role comparison: keep location/experience, relax role.
+    role_jobs = filter_jobs(
+        prepared_jobs,
+        job_role=None,
+        location=location,
+        experience_level=experience_level
     )
 
     insights = {
         "jobs": filtered_jobs,
-
-        "total_jobs": calculate_total_jobs(
-            filtered_jobs
-        ),
-
-        "remote_percentage": calculate_remote_percentage(
-            filtered_jobs
-        ),
-
-        "salary_range": salary_range,
-
-        "top_hiring_role": calculate_top_hiring_role(
-            filtered_jobs
-        ),
+        "total_jobs": calculate_total_jobs(filtered_jobs),
+        "remote_percentage": calculate_remote_percentage(filtered_jobs),
+        "salary_range": calculate_salary_range(filtered_jobs),
+        "top_hiring_role": calculate_top_hiring_role(filtered_jobs),
 
         "salary_by_experience": calculate_salary_by_experience(
-            filtered_jobs
+            experience_jobs
         ),
-
         "top_locations_by_salary": calculate_top_locations_by_salary(
-            filtered_jobs
+            location_jobs
         ),
-
         "top_skills": calculate_top_skills(
-            filtered_jobs
+            skills_industry_jobs
         ),
-
         "industry_distribution": calculate_industry_distribution(
-            filtered_jobs
+            skills_industry_jobs
         ),
-
         "top_roles_by_salary": calculate_top_roles_by_salary(
-            filtered_jobs
+            role_jobs
         ),
 
         "six_month_job_change": calculate_six_month_change(
-            filtered_jobs
+            experience_jobs
         ),
-
         "six_month_remote_change": calculate_remote_six_month_change(
-            filtered_jobs
+            experience_jobs
         )
     }
 
